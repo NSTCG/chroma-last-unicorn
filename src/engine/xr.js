@@ -1,6 +1,6 @@
 // WebXR VR Controller Manager with Locomotion, Punch Detection, Snap Turn & Haptics
 
-export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onTriggerPress) {
+export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState) {
   const THREE = window.THREE;
   renderer.xr.enabled = true;
 
@@ -13,51 +13,31 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   const tempMatrix = new THREE.Matrix4();
   const lastPositions = [new THREE.Vector3(), new THREE.Vector3()];
 
-  // Laser Pointer Ray Geometry
-  const laserGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, -1)
-  ]);
-  const laserMat = new THREE.LineBasicMaterial({
-    color: 0x00ffff,
-    transparent: true,
-    opacity: 0.6
-  });
-
   // VR Controller Grip and Input Setup
   for (let i = 0; i < 2; i++) {
     const controller = renderer.xr.getController(i);
-    const laser = new THREE.Line(laserGeo, laserMat.clone());
+    const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
+    const laserMat = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
+    const laser = new THREE.Line(laserGeo, laserMat);
     laser.scale.z = 25;
     controller.add(laser);
 
     controller.addEventListener('selectstart', () => {
-      if (onTriggerPress) onTriggerPress();
+      if (onActZeroTrigger) onActZeroTrigger();
 
       tempMatrix.identity().extractRotation(controller.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
       raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
       const targets = getInteractiveObjects();
-      const intersects = raycaster.intersectObjects(targets, true);
-
-      if (intersects.length > 0) {
-        let hit = intersects[0].object;
-        while (hit && !hit.userData.data && hit.parent) {
-          hit = hit.parent;
-        }
-        if (hit) {
-          onSelectObject(hit);
-          // Haptic pulse on VR gamepad
-          const session = renderer.xr.getSession();
-          if (session && session.inputSources && session.inputSources[i]) {
-            const source = session.inputSources[i];
-            if (source.gamepad && source.gamepad.hapticActuators && source.gamepad.hapticActuators[0]) {
-              source.gamepad.hapticActuators[0].pulse(0.85, 150);
-            }
-          }
-        }
+      const hits = raycaster.intersectObjects(targets, true);
+      let hitObj = null;
+      if (hits.length > 0) {
+        let hit = hits[0].object;
+        while (hit && !hit.userData?.data && hit.parent) hit = hit.parent;
+        if (hit?.userData?.data) hitObj = hit;
       }
+      onSelectObject(hitObj);
     });
 
     xrGroup.add(controller);
@@ -89,6 +69,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   const forwardVec = new THREE.Vector3();
   const rightVec = new THREE.Vector3();
   const currentPos = new THREE.Vector3();
+  const vrMoveDir = new THREE.Vector3();
 
   return {
     controllers,
@@ -110,11 +91,15 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
         }
       });
 
+      const isMounted = getUnicornState ? getUnicornState().isMounted : false;
+      const unicorn = getUnicornState ? getUnicornState().unicorn : null;
+
       if (session && session.inputSources) {
         camera.getWorldDirection(forwardVec);
         forwardVec.y = 0;
         forwardVec.normalize();
         rightVec.crossVectors(camera.up, forwardVec).negate().normalize();
+        vrMoveDir.set(0, 0, 0);
 
         for (const source of session.inputSources) {
           if (!source.gamepad || !source.gamepad.axes) continue;
@@ -122,15 +107,10 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
           const ax = axes[2] !== undefined ? axes[2] : axes[0] || 0;
           const ay = axes[3] !== undefined ? axes[3] : axes[1] || 0;
 
-          // LEFT HAND: Smooth Locomotion
+          // LEFT HAND: Locomotion
           if (source.handedness === 'left') {
-            const speed = 7.5 * delta;
-            if (Math.abs(ay) > 0.12) {
-              xrGroup.position.addScaledVector(forwardVec, -ay * speed);
-            }
-            if (Math.abs(ax) > 0.12) {
-              xrGroup.position.addScaledVector(rightVec, ax * speed);
-            }
+            if (Math.abs(ay) > 0.12) vrMoveDir.addScaledVector(forwardVec, -ay);
+            if (Math.abs(ax) > 0.12) vrMoveDir.addScaledVector(rightVec, ax);
           }
 
           // RIGHT HAND: Snap Turn & Elevation
@@ -151,16 +131,29 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
           }
         }
 
-        // Play area radius clamping
-        const dx = xrGroup.position.x;
-        const dz = xrGroup.position.z - (-12);
-        const dist = Math.hypot(dx, dz);
-        const MAX_R = 38.0;
-        if (dist > MAX_R) {
-          xrGroup.position.x = (dx / dist) * MAX_R;
-          xrGroup.position.z = -12 + (dz / dist) * MAX_R;
+        if (isMounted && unicorn) {
+          const isMoving = vrMoveDir.lengthSq() > 0.001;
+          if (isMoving) vrMoveDir.normalize();
+          unicorn.move(vrMoveDir, delta, camera.rotation.y);
+          unicorn.update(delta, isMoving ? 'gallop' : 'idle');
+          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y, unicorn.group.position.z);
+        } else {
+          if (vrMoveDir.lengthSq() > 0.001) {
+            vrMoveDir.normalize();
+            xrGroup.position.addScaledVector(vrMoveDir, 7.5 * delta);
+          }
+
+          // Play area radius clamping (Expanded vast sanctuary)
+          const dx = xrGroup.position.x;
+          const dz = xrGroup.position.z - (-12);
+          const dist = Math.hypot(dx, dz);
+          const MAX_R = 92.0;
+          if (dist > MAX_R) {
+            xrGroup.position.x = (dx / dist) * MAX_R;
+            xrGroup.position.z = -12 + (dz / dist) * MAX_R;
+          }
+          xrGroup.position.y = Math.max(-0.5, Math.min(25.0, xrGroup.position.y));
         }
-        xrGroup.position.y = Math.max(-0.5, Math.min(16.0, xrGroup.position.y));
       }
 
       // Real-time ray hover highlighting

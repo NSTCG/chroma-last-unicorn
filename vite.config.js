@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
 
   return {
+    resolve: {
+      alias: {
+        '@devStudio': isDev
+          ? path.resolve(__dirname, 'src/dev/devStudio.js')
+          : path.resolve(__dirname, 'src/dev/devStudioEmpty.js')
+      }
+    },
     plugins: [
       viteSingleFile({
         removeOptionalTags: true,

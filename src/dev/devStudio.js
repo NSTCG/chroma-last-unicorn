@@ -5,11 +5,11 @@ export function setupDevStudio(game) {
   const panel = document.createElement('div');
   panel.id = 'dev-studio-panel';
   panel.style.cssText = `
-    position: absolute; top: 16px; right: 16px; width: 320px;
-    background: rgba(12, 14, 26, 0.94); backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
-    padding: 16px; color: #fff; font-family: monospace; font-size: 12px;
-    z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    position: fixed; top: 16px; right: 16px; width: 330px;
+    background: rgba(10, 12, 24, 0.96); backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(0, 240, 255, 0.35); border-radius: 12px;
+    padding: 16px; color: #fff; font-family: system-ui, -apple-system, sans-serif; font-size: 12px;
+    z-index: 999999; box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(0,240,255,0.25);
     max-height: 90vh; overflow-y: auto; display: none;
   `;
 
@@ -19,9 +19,11 @@ export function setupDevStudio(game) {
       <button id="dev-close-btn" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:14px;">✕</button>
     </div>
 
-    <!-- Act Jump -->
+    <!-- Quick Action / Unicorn Riding -->
     <div style="margin-bottom:12px;">
-      <label style="color:#00ffff; font-weight:bold; display:block; margin-bottom:6px;">STORY ACT JUMP</label>
+      <button id="dev-btn-mount" style="width:100%; padding:8px; background:linear-gradient(135deg, #f07, #70f); border:none; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer; margin-bottom:6px;">
+        🦄 Toggle Mount / Ride Unicorn
+      </button>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
         <button class="dev-btn" data-act="0">Act 0: Slide</button>
         <button class="dev-btn" data-act="1">Act 1: Adulthood</button>
@@ -30,22 +32,41 @@ export function setupDevStudio(game) {
       </div>
     </div>
 
-    <!-- Grass Sculptor & Meadow Controls -->
-    <div style="margin-bottom:12px; background:rgba(30,255,100,0.06); padding:10px; border-radius:8px; border:1px solid rgba(30,255,100,0.2);">
-      <label style="color:#33ff77; font-weight:bold; display:block; margin-bottom:8px;">🌾 GRASS & MEADOW TUNER</label>
+    <!-- GI & Lighting Studio -->
+    <div style="margin-bottom:12px; background:rgba(255,200,50,0.06); padding:10px; border-radius:8px; border:1px solid rgba(255,200,50,0.2);">
+      <label style="color:#ffcc33; font-weight:bold; display:block; margin-bottom:8px;">☀️ SHADOW & GI LIGHTING</label>
       
       <div style="margin-bottom:6px;">
         <div style="display:flex; justify-content:space-between;">
-          <span>Grass Density (Count):</span> <span id="val-g-count">14000</span>
+          <span>Shadow GI Ambient Bounce:</span> <span id="val-gi">1.35x</span>
         </div>
-        <input type="range" id="slider-g-count" min="1000" max="28000" step="500" value="14000" style="width:100%;">
+        <input type="range" id="slider-gi" min="0.2" max="2.5" step="0.05" value="1.35" style="width:100%;">
       </div>
 
       <div style="margin-bottom:6px;">
         <div style="display:flex; justify-content:space-between;">
-          <span>Blade Width:</span> <span id="val-g-w">1.00x</span>
+          <span>Cloud Shadow Density:</span> <span id="val-g-cloud">0.42</span>
         </div>
-        <input type="range" id="slider-g-w" min="0.3" max="3.0" step="0.05" value="1.0" style="width:100%;">
+        <input type="range" id="slider-g-cloud" min="0.0" max="1.0" step="0.02" value="0.42" style="width:100%;">
+      </div>
+    </div>
+
+    <!-- Grass & Meadow Tuner -->
+    <div style="margin-bottom:12px; background:rgba(30,255,100,0.06); padding:10px; border-radius:8px; border:1px solid rgba(30,255,100,0.2);">
+      <label style="color:#33ff77; font-weight:bold; display:block; margin-bottom:8px;">🌾 GRASS & MEADOW SCULPTOR</label>
+      
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Grass Density (Count):</span> <span id="val-g-count">58000</span>
+        </div>
+        <input type="range" id="slider-g-count" min="1000" max="80000" step="1000" value="58000" style="width:100%;">
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Blade Width:</span> <span id="val-g-w">2.00x</span>
+        </div>
+        <input type="range" id="slider-g-w" min="0.5" max="4.0" step="0.1" value="2.0" style="width:100%;">
       </div>
 
       <div style="margin-bottom:6px;">
@@ -53,6 +74,27 @@ export function setupDevStudio(game) {
           <span>Blade Height:</span> <span id="val-g-h">1.00x</span>
         </div>
         <input type="range" id="slider-g-h" min="0.3" max="3.0" step="0.05" value="1.0" style="width:100%;">
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Grass Gradient Power:</span> <span id="val-g-grad">0.85</span>
+        </div>
+        <input type="range" id="slider-g-grad" min="0.3" max="2.2" step="0.05" value="0.85" style="width:100%;">
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Grass Base Root Color:</span>
+          <input type="color" id="picker-g-base" value="#0a3812" style="background:none; border:1px solid #555; border-radius:4px; height:24px; cursor:pointer;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Grass Tip Green Color:</span>
+          <input type="color" id="picker-g-tip" value="#47f561" style="background:none; border:1px solid #555; border-radius:4px; height:24px; cursor:pointer;">
+        </div>
       </div>
 
       <div style="margin-bottom:6px;">
@@ -70,15 +112,22 @@ export function setupDevStudio(game) {
       </div>
     </div>
 
-    <!-- Shader & Atmosphere -->
+    <!-- Fog & Atmosphere -->
     <div style="margin-bottom:12px;">
-      <label style="color:#ffcc00; font-weight:bold; display:block; margin-bottom:6px;">SHADER & ATMOSPHERE</label>
+      <label style="color:#00ffff; font-weight:bold; display:block; margin-bottom:6px;">🌫️ FOG & ATMOSPHERE</label>
       
       <div style="margin-bottom:6px;">
         <div style="display:flex; justify-content:space-between;">
-          <span>Sky Blend Intensity:</span> <span id="val-blend">0.65</span>
+          <span>Distance Fog Density:</span> <span id="val-fog">1.00</span>
         </div>
-        <input type="range" id="slider-blend" min="0.0" max="1.5" step="0.05" value="0.65" style="width:100%;">
+        <input type="range" id="slider-fog" min="0.0" max="2.0" step="0.05" value="1.00" style="width:100%;">
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Sky Blend Intensity:</span> <span id="val-blend">0.95</span>
+        </div>
+        <input type="range" id="slider-blend" min="0.0" max="1.5" step="0.05" value="0.95" style="width:100%;">
       </div>
 
       <div style="margin-bottom:6px;">
@@ -108,15 +157,17 @@ export function setupDevStudio(game) {
     </button>
   `;
 
-  // Mini toggle pill button
+  // Prominent high-z-index floating toggle pill button
   const togglePill = document.createElement('button');
   togglePill.id = 'dev-toggle-pill';
-  togglePill.innerText = '⚙️ Studio (~ / F2)';
+  togglePill.innerHTML = '⚙️ <strong>Studio (~ / F2)</strong>';
   togglePill.style.cssText = `
-    position: absolute; top: 16px; right: 16px; z-index: 999;
-    background: rgba(20,20,35,0.75); border: 1px solid rgba(255,255,255,0.2);
-    color: #fff; padding: 6px 12px; border-radius: 999px; font-size: 11px;
-    cursor: pointer; backdrop-filter: blur(8px);
+    position: fixed; top: 18px; right: 18px; z-index: 999999;
+    background: linear-gradient(135deg, rgba(255,0,119,0.85), rgba(119,0,255,0.85));
+    border: 1.5px solid rgba(255,255,255,0.4);
+    color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 12px;
+    cursor: pointer; backdrop-filter: blur(12px); box-shadow: 0 4px 18px rgba(255,0,119,0.5);
+    display: flex; align-items: center; gap: 6px;
   `;
 
   document.body.appendChild(togglePill);
@@ -143,6 +194,11 @@ export function setupDevStudio(game) {
     if (e.code === 'Backquote' || e.code === 'F2') {
       togglePanel();
     }
+  });
+
+  // Mount toggle button
+  panel.querySelector('#dev-btn-mount').addEventListener('click', () => {
+    if (game.toggleMount) game.toggleMount();
   });
 
   // Act Jumps
@@ -173,6 +229,16 @@ export function setupDevStudio(game) {
     });
   };
 
+  // GI & Lighting
+  bindSlider('slider-gi', 'val-gi', 'x', (val) => {
+    if (game.grass?.params) game.grass.params.giStrength = val;
+    if (game.world?.setGIShadowStrength) game.world.setGIShadowStrength(val);
+  });
+
+  bindSlider('slider-g-cloud', 'val-g-cloud', '', (val) => {
+    if (game.grass?.params) game.grass.params.cloudDensity = val;
+  });
+
   // Grass Sliders
   bindSlider('slider-g-count', 'val-g-count', '', (val) => {
     if (game.grass?.params) game.grass.params.count = val;
@@ -186,6 +252,22 @@ export function setupDevStudio(game) {
     if (game.grass?.params) game.grass.params.heightScale = val;
   });
 
+  bindSlider('slider-g-grad', 'val-g-grad', '', (val) => {
+    if (game.grass?.params) game.grass.params.gradPow = val;
+  });
+
+  panel.querySelector('#picker-g-base').addEventListener('input', (e) => {
+    if (game.grass?.uniforms?.uGrassBaseTint) {
+      game.grass.uniforms.uGrassBaseTint.value.set(e.target.value);
+    }
+  });
+
+  panel.querySelector('#picker-g-tip').addEventListener('input', (e) => {
+    if (game.grass?.uniforms?.uGrassTipTint) {
+      game.grass.uniforms.uGrassTipTint.value.set(e.target.value);
+    }
+  });
+
   bindSlider('slider-g-wspeed', 'val-g-wspeed', 'x', (val) => {
     if (game.grass?.params) game.grass.params.windSpeed = val;
   });
@@ -194,9 +276,14 @@ export function setupDevStudio(game) {
     if (game.grass?.params) game.grass.params.windStrength = val;
   });
 
-  // Atmosphere Sliders
+  // Fog & Atmosphere Sliders
+  bindSlider('slider-fog', 'val-fog', '', (val) => {
+    if (game.world?.fogCards?.setDensity) game.world.fogCards.setDensity(val);
+  });
+
   bindSlider('slider-blend', 'val-blend', '', (val) => {
-    if (game.world.setFadeIntensity) game.world.setFadeIntensity(val);
+    if (game.setFadeIntensity) game.setFadeIntensity(val);
+    else if (game.world.setFadeIntensity) game.world.setFadeIntensity(val);
   });
 
   bindSlider('slider-glit', 'val-glit', '', (val) => {
@@ -214,14 +301,22 @@ export function setupDevStudio(game) {
   // Export Config
   panel.querySelector('#dev-export-btn').addEventListener('click', () => {
     const cfg = {
+      gi: {
+        shadowStrength: parseFloat(panel.querySelector('#slider-gi').value),
+        cloudDensity: parseFloat(panel.querySelector('#slider-g-cloud').value)
+      },
       grass: {
         count: parseInt(panel.querySelector('#slider-g-count').value),
         widthScale: parseFloat(panel.querySelector('#slider-g-w').value),
         heightScale: parseFloat(panel.querySelector('#slider-g-h').value),
+        gradPow: parseFloat(panel.querySelector('#slider-g-grad').value),
+        baseColor: panel.querySelector('#picker-g-base').value,
+        tipColor: panel.querySelector('#picker-g-tip').value,
         windSpeed: parseFloat(panel.querySelector('#slider-g-wspeed').value),
         windStrength: parseFloat(panel.querySelector('#slider-g-wstr').value)
       },
       atmosphere: {
+        fogDensity: parseFloat(panel.querySelector('#slider-fog').value),
         blendIntensity: parseFloat(panel.querySelector('#slider-blend').value),
         glitter: parseFloat(panel.querySelector('#slider-glit').value),
         iridescence: parseFloat(panel.querySelector('#slider-irid').value),

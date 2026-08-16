@@ -50,12 +50,12 @@ async function runBuildPipeline() {
           }
         ],
         {
-          numAbbreviations: 32,
+          numAbbreviations: 64,
           allowFreeVars: true
         }
       );
 
-      // Level 1 optimization runs in ~2 seconds
+      // Fast level 1 optimization runs in ~2 seconds
       await packer.optimize(1);
       const { firstLine, secondLine } = packer.makeDecoder();
       const packedJs = `${firstLine}\n${secondLine}`;

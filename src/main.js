@@ -12,6 +12,7 @@ import { NarrativeManager } from './story/narrative.js';
 import { createVRHUD } from './engine/vrHud.js';
 import { setupPCControls } from './engine/controls.js';
 import { setupXR } from './engine/xr.js';
+import { setupDevStudio } from './dev/devStudio.js';
 
 class ChromaGame {
   constructor() {
@@ -24,27 +25,47 @@ class ChromaGame {
     this.sky = createRainbowSky(this.scene);
     this.particles = createParticleSystem(this.scene);
     this.world = createWorld(this.scene);
-    this.grass = createGrassField(this.scene, 16000);
+    this.grass = createGrassField(this.scene, 58000);
     this.unicorn = createUnicorn(this.scene);
 
     this.unicornState = 'idle';
     this.awakened = 0.0;
+    this.isMounted = false;
 
     this.narrative = new NarrativeManager(this);
     this.shards = createShardsSystem(this.scene, (idx, data) => {
       this.narrative.onShardCollected(idx, data);
     }, this.vrHud);
 
-    const getInteractive = () => this.shards.getInteractiveMeshes();
+    const getInteractive = () => [
+      ...this.shards.getInteractiveMeshes(),
+      ...this.unicorn.getInteractiveMeshes()
+    ];
+
     const onSelect = (mesh) => {
       if (this.narrative.act === 0) {
         this.narrative.triggerSlide();
-      } else {
-        this.shards.collect(mesh);
+        return;
       }
+      if (mesh && (mesh.userData?.isUnicorn || mesh.userData?.unicorn)) {
+        this.toggleMount();
+        return;
+      }
+      if (this.isMounted && !mesh) {
+        this.toggleMount();
+        return;
+      }
+      this.shards.collect(mesh);
     };
 
-    this.pcControls = setupPCControls(this.camera, this.renderer.domElement, getInteractive, onSelect);
+    this.pcControls = setupPCControls(
+      this.camera,
+      this.renderer.domElement,
+      getInteractive,
+      onSelect,
+      () => ({ isMounted: this.isMounted, unicorn: this.unicorn })
+    );
+
     this.xr = setupXR(
       this.renderer,
       this.scene,
@@ -54,16 +75,26 @@ class ChromaGame {
       (pos, speed) => this.shards.checkVRPunch(pos, speed),
       () => {
         if (this.narrative.act === 0) this.narrative.triggerSlide();
-      }
+      },
+      () => ({ isMounted: this.isMounted, unicorn: this.unicorn })
     );
 
     this.initUI();
     this.startLoop();
 
-    // Dev Studio (Excluded from production build)
-    if (__DEV__) {
-      const devPath = './dev/devStudio.js';
-      import(/* @vite-ignore */ devPath).then(m => m.setupDevStudio(this)).catch(() => {});
+    // Dev Studio (Dreamcrafter Live Art & Shader Studio)
+    setupDevStudio(this);
+  }
+
+  toggleMount() {
+    this.isMounted = !this.isMounted;
+    if (this.isMounted) {
+      this.narrative.showSubtitle('🦄 Mounted Celestial Unicorn! [W A S D] to ride, [CLICK / E] to dismount.');
+    } else {
+      this.camera.position.x = this.unicorn.group.position.x - 1.8;
+      this.camera.position.z = this.unicorn.group.position.z + 1.2;
+      this.unicorn.update(0, 'idle');
+      this.narrative.showSubtitle('Dismounted unicorn. Exploring on foot.');
     }
   }
 
@@ -75,6 +106,11 @@ class ChromaGame {
     this.world.setAwakened(val);
     this.grass.setAwakened(val);
     this.unicorn.setAwakened(val);
+  }
+
+  setFadeIntensity(val) {
+    if (this.world?.setFadeIntensity) this.world.setFadeIntensity(val);
+    if (this.grass?.setFadeIntensity) this.grass.setFadeIntensity(val);
   }
 
   initUI() {
@@ -110,9 +146,11 @@ class ChromaGame {
 
       this.sky.update(delta);
       this.particles.update(delta);
-      this.world.update(delta);
+      this.world.update(delta, this.camera);
       this.grass.update(delta);
-      this.unicorn.update(delta, this.unicornState);
+      if (!this.isMounted) {
+        this.unicorn.update(delta, this.unicornState);
+      }
       this.shards.update(delta);
       this.narrative.update(delta);
       this.vrHud.update(delta);

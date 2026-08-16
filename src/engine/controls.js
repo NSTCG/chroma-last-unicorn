@@ -1,6 +1,6 @@
-// Desktop PC Controls (PointerLock + Drag Mouse Look + Keyboard Movement & Universal Click Interact)
+// Desktop PC Controls (PointerLock + Mouse Look + Keyboard Movement & Unicorn Riding)
 
-export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject) {
+export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState) {
   const THREE = window.THREE;
   let isLocked = false;
   let isMouseDown = false;
@@ -43,7 +43,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
       while (hit && !hit.userData?.data && hit.parent) hit = hit.parent;
       if (hit?.userData?.data) hitObj = hit;
     }
-    // Always dispatch onSelectObject so Act 0 slide triggers on any click
+    // Always dispatch onSelectObject so clicks trigger mount/slide/shard
     onSelectObject(hitObj);
   };
 
@@ -104,26 +104,50 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
       if (keys['KeyD'] || keys['ArrowRight']) moveDir.add(right);
       if (keys['KeyA'] || keys['ArrowLeft']) moveDir.sub(right);
 
-      if (moveDir.lengthSq() > 0) {
-        moveDir.normalize();
-        camera.position.addScaledVector(moveDir, moveSpeed * delta);
+      const isMounted = getUnicornState ? getUnicornState().isMounted : false;
+      const unicorn = getUnicornState ? getUnicornState().unicorn : null;
+
+      if (isMounted && unicorn) {
+        // RIDING UNICORN
+        const isMoving = moveDir.lengthSq() > 0.001;
+        if (isMoving) moveDir.normalize();
+
+        unicorn.move(moveDir, delta, euler.y);
+        unicorn.update(delta, isMoving ? 'gallop' : 'idle');
+
+        // Camera stays locked in riding saddle view with gentle gallop bob
+        const uPos = unicorn.group.position;
+        camera.position.set(uPos.x, uPos.y + 1.85, uPos.z);
+      } else {
+        // WALKING ON FOOT
+        if (moveDir.lengthSq() > 0) {
+          moveDir.normalize();
+          camera.position.addScaledVector(moveDir, moveSpeed * delta);
+        }
+
+        if (keys['Space']) camera.position.y += moveSpeed * 0.7 * delta;
+        if (keys['ShiftLeft'] || keys['KeyC']) camera.position.y = Math.max(1.7, camera.position.y - moveSpeed * 0.7 * delta);
+
+        // Keep player on ground plane if not floating
+        const d = Math.hypot(camera.position.x, camera.position.z + 12);
+        const groundY = d < 90 ? 0 : Math.pow((d - 90) / 120, 1.7) * 48;
+        if (camera.position.y < groundY + 1.7) {
+          camera.position.y = groundY + 1.7;
+        }
+
+        // Play area boundary clamping (Expanded vast sanctuary)
+        const dx = camera.position.x;
+        const dz = camera.position.z - (-12);
+        const dist = Math.hypot(dx, dz);
+        const MAX_R = 92.0;
+
+        if (dist > MAX_R) {
+          const angle = Math.atan2(dz, dx);
+          camera.position.x = Math.cos(angle) * MAX_R;
+          camera.position.z = -12 + Math.sin(angle) * MAX_R;
+        }
+        camera.position.y = Math.min(Math.max(1.5, camera.position.y), 55.0);
       }
-
-      if (keys['Space']) camera.position.y += moveSpeed * 0.7 * delta;
-      if (keys['ShiftLeft'] || keys['KeyC']) camera.position.y = Math.max(1.7, camera.position.y - moveSpeed * 0.7 * delta);
-
-      // Play area boundary clamping
-      const dx = camera.position.x;
-      const dz = camera.position.z - (-12);
-      const dist = Math.hypot(dx, dz);
-      const MAX_R = 38.0;
-
-      if (dist > MAX_R) {
-        const angle = Math.atan2(dz, dx);
-        camera.position.x = Math.cos(angle) * MAX_R;
-        camera.position.z = -12 + Math.sin(angle) * MAX_R;
-      }
-      camera.position.y = Math.min(Math.max(1.5, camera.position.y), 45.0);
     }
   };
 }

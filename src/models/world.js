@@ -1,5 +1,6 @@
 // Streamlined World with Clean Architecture, Soft Shadows & Sky Blending
 import { createPrismaticMaterial } from '../shaders/prismaticMaterial.js';
+import { createFogCards } from './fogCards.js';
 
 export function createWorld(scene) {
   const THREE = window.THREE;
@@ -9,7 +10,12 @@ export function createWorld(scene) {
   const stoneMat = createPrismaticMaterial({ baseColor: 0x505460, iridescence: 0.0, dispersion: 0.0, glitter: 0.15, emissive: 0.0 });
   const materials = [stoneMat];
 
-  const groundUniforms = { uTime: { value: 0 }, uAwakened: { value: 0.0 }, uFadeIntensity: { value: 0.65 } };
+  const groundUniforms = {
+    uTime: { value: 0 },
+    uAwakened: { value: 0.0 },
+    uFadeIntensity: { value: 0.95 },
+    uGIShadowStrength: { value: 1.35 }
+  };
   const groundMat = new THREE.MeshStandardMaterial({
     color: 0x12141a, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, transparent: true, depthWrite: true
   });
@@ -18,20 +24,35 @@ export function createWorld(scene) {
   groundMat.onBeforeCompile = (s) => {
     Object.assign(s.uniforms, groundUniforms);
     s.vertexShader = `varying vec3 vWPos;\n` + s.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    s.fragmentShader = `uniform float uTime,uAwakened,uFadeIntensity;varying vec3 vWPos;\n` + s.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
-      vec3 lush=vec3(0.035,0.15,0.055);
-      float c=sin(vWPos.x*0.04+uTime*0.3)*cos(vWPos.z*0.04+uTime*0.2)*0.5+0.5;
-      vec3 glow=mix(vec3(0.92,0.44,0.58),vec3(0.96,0.66,0.48),sin(uTime*0.2+vWPos.x*0.03)*0.5+0.5);
-      gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*mix(lush,lush+glow*0.28,smoothstep(0.35,0.8,c))*6.0,uAwakened);
-      gl_FragColor.a=1.0-smoothstep(70.0,220.0,length(vWPos-cameraPosition))*uFadeIntensity;`);
+    s.fragmentShader = `uniform float uTime,uAwakened,uFadeIntensity,uGIShadowStrength;varying vec3 vWPos;
+      float cloudN(vec2 p, float t){
+        vec2 uv1 = p * 0.025 + vec2(t * 0.06, t * 0.03);
+        float n1 = sin(uv1.x * 3.14 + cos(uv1.y * 2.7)) * cos(uv1.y * 3.14 + sin(uv1.x * 2.1)) * 0.5 + 0.5;
+        vec2 uv2 = p * 0.05 - vec2(t * 0.04, t * 0.07);
+        float n2 = sin(uv2.x * 2.8 + uv2.y * 1.9) * cos(uv2.y * 3.2 - uv2.x * 1.5) * 0.5 + 0.5;
+        return smoothstep(0.2, 0.85, n1 * 0.65 + n2 * 0.35);
+      }\n` + s.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
+      float c = cloudN(vWPos.xz, uTime);
+      vec3 shadowLush = vec3(0.04, 0.20, 0.06);
+      vec3 sunLush = vec3(0.08, 0.32, 0.12) + vec3(0.08, 0.06, 0.02);
+      vec3 groundAwakened = mix(shadowLush, sunLush, c);
+      vec3 groundGrey = mix(vec3(0.08, 0.08, 0.10), vec3(0.18, 0.18, 0.22), c);
+      vec3 groundFinal = mix(groundGrey, groundAwakened, uAwakened);
+
+      vec3 giAmbient = mix(vec3(0.55, 0.58, 0.70), vec3(0.72, 0.54, 0.70), uAwakened) * uGIShadowStrength;
+      vec3 directSun = vec3(1.22, 1.14, 1.02);
+      
+      vec3 groundLit = groundFinal * mix(giAmbient, directSun, c * 0.42 + 0.58);
+      gl_FragColor.rgb = groundLit;
+      gl_FragColor.a = 1.0 - smoothstep(110.0, 260.0, length(vWPos - cameraPosition)) * uFadeIntensity;`);
   };
 
-  const groundGeo = new THREE.PlaneGeometry(320, 320, 32, 32);
+  const groundGeo = new THREE.PlaneGeometry(550, 550, 48, 48);
   groundGeo.rotateX(-Math.PI / 2);
   const pos = groundGeo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i), r = Math.hypot(x, z), a = Math.atan2(z, x);
-    pos.setY(i, r < 45 ? 0 : Math.pow((r - 45) / 100, 1.7) * 38 + Math.sin(a * 6) * 8);
+    pos.setY(i, r < 90 ? 0 : Math.pow((r - 90) / 120, 1.7) * 48 + Math.sin(a * 6) * 10);
   }
   groundGeo.computeVertexNormals();
   const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -48,11 +69,11 @@ export function createWorld(scene) {
   ped.castShadow = ped.receiveShadow = true;
   worldGroup.add(altar, ped);
 
-  const mGeo = new THREE.BoxGeometry(2.8, 25, 2.8);
-  for (let i = 0; i < 20; i++) {
-    const a = (i / 20) * 6.283, d = 38 + Math.random() * 25, h = 18 + Math.random() * 24;
+  const mGeo = new THREE.BoxGeometry(3.5, 32, 3.5);
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * 6.283, d = 82 + Math.random() * 32, h = 22 + Math.random() * 26;
     const m = new THREE.Mesh(mGeo, stoneMat);
-    m.scale.set(1 + Math.random(), h / 25, 1 + Math.random());
+    m.scale.set(1 + Math.random(), h / 32, 1 + Math.random());
     m.position.set(Math.cos(a) * d, h / 2, -12 + Math.sin(a) * d);
     m.castShadow = m.receiveShadow = true;
     worldGroup.add(m);
@@ -98,21 +119,29 @@ export function createWorld(scene) {
   tube.castShadow = tube.receiveShadow = true;
   worldGroup.add(tube);
 
+  const fogCards = createFogCards(scene);
+
   return {
     worldGroup,
     materials,
     groundMat,
+    fogCards,
     setAwakened: (val) => {
       groundUniforms.uAwakened.value = val;
+      fogCards.setAwakened(val);
       materials.forEach(m => { if (m.uniforms?.uColorAwakened) m.uniforms.uColorAwakened.value = val; });
     },
     setFadeIntensity: (val) => {
       groundUniforms.uFadeIntensity.value = val;
       materials.forEach(m => { if (m.uniforms?.uFadeIntensity) m.uniforms.uFadeIntensity.value = val; });
     },
-    update: (delta) => {
+    setGIShadowStrength: (val) => {
+      groundUniforms.uGIShadowStrength.value = val;
+    },
+    update: (delta, camera) => {
       groundUniforms.uTime.value += delta;
       materials.forEach(m => { if (m.uniforms?.uTime) m.uniforms.uTime.value += delta; });
+      fogCards.update(delta, camera);
       const t = groundUniforms.uTime.value;
       islands.forEach((isl, i) => { isl.g.position.y = isl.y + Math.sin(t * 1.2 + i) * 0.35; });
     }

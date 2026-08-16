@@ -1,6 +1,10 @@
 // Celestial Unicorn with Crisp Cel-Toon Outlines, Shadow Casting & Dynamic Flight
 
-export function createUnicorn(scene) {
+// Feature Flag: Set to true to include angel wings on the unicorn.
+// When false (default), wing geometry, meshes, and animation code are stripped by the bundler compiler.
+export const ENABLE_UNICORN_WINGS = false;
+
+export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}) {
   const THREE = window.THREE;
   const group = new THREE.Group();
   const uniforms = { uTime: { value: 0 }, uColorAwakened: { value: 0.0 } };
@@ -23,18 +27,23 @@ export function createUnicorn(scene) {
       vec3 N=normalize(gl_FrontFacing?vN:-vN),V=normalize(vVP);
       vec3 L=normalize(vec3(0.5,1.0,0.4));
       float d=max(dot(N,L),0.0);
-      float toon=smoothstep(0.0,0.08,d)*0.35+smoothstep(0.35,0.45,d)*0.65;
-      float spec=pow(max(dot(reflect(-L,N),V),0.0),24.0);
+      float toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6;
+      float spec=pow(max(dot(reflect(-L,N),V),0.0),20.0);
       float fr=pow(1.0-max(dot(N,V),0.0),2.2);
-      float outl=smoothstep(0.70,0.78,1.0-max(dot(N,V),0.0));
 
-      vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.75+0.25)+rb(vWP.y*0.3+uTime*0.3)*fr*0.35;
-      vec3 gold=vec3(1.0,0.82,0.28)*(toon*0.75+0.25)+rb(uTime*0.4+vWP.y*0.4)*fr*0.55;
-      vec3 hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.8+0.2)+spec*vec3(0.8);
+      // Bold, crisp ink outline for cel-shading
+      float outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));
+
+      vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45;
+      vec3 gold=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65;
+      vec3 hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9);
 
       vec3 base=uMat>1.5?hair:(uMat>0.5?gold:pearl);
-      vec3 col=mix(vec3(0.15+toon*0.15),mix(base+spec*0.4,vec3(0.04,0.04,0.08),outl*0.92),uColorAwakened);
-      gl_FragColor=vec4(col,1.0-smoothstep(70.0,200.0,length(vVP))*0.65);
+      vec3 ink=vec3(0.04,0.02,0.07);
+
+      // Always full celestial color, with bold ink outline
+      vec3 col=mix(base+spec*0.45, ink, outl*0.95);
+      gl_FragColor=vec4(col,1.0-smoothstep(90.0,240.0,length(vVP))*0.65);
     }
   `;
 
@@ -197,48 +206,74 @@ export function createUnicorn(scene) {
     return { hip, knee };
   });
 
-  // 5. Classic Angel Wings (Folded Sideways Along Flank)
-  const createAngelWing = () => {
-    const g = new THREE.Group();
-    const wingGeo = new THREE.BufferGeometry();
-    wingGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-      0.01,0.05,0.05, 0.06,0.78,-0.10, 0.12,0.52,-0.78,
-      0.01,0.05,0.05, 0.12,0.52,-0.78, 0.06,0.32,-0.42,
-      0.01,0.05,0.05, 0.12,0.52,-0.78, 0.10,0.30,-0.70,
-      0.01,0.05,0.05, 0.10,0.30,-0.70, 0.05,0.18,-0.38,
-      0.01,0.02,0.02, 0.10,0.30,-0.70, 0.08,0.12,-0.58,
-      0.01,0.02,0.02, 0.08,0.12,-0.58, 0.04,0.06,-0.30
-    ]), 3));
-    wingGeo.computeVertexNormals();
-    g.add(new THREE.Mesh(wingGeo, rainbowMat));
-    return g;
-  };
+  // 5. Classic Angel Wings (Folded Sideways Along Flank) - Guarded by enableWings
+  let wingL = null, wingR = null;
+  if (enableWings) {
+    const createAngelWing = () => {
+      const g = new THREE.Group();
+      const wingGeo = new THREE.BufferGeometry();
+      wingGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+        0.01,0.05,0.05, 0.06,0.78,-0.10, 0.12,0.52,-0.78,
+        0.01,0.05,0.05, 0.12,0.52,-0.78, 0.06,0.32,-0.42,
+        0.01,0.05,0.05, 0.12,0.52,-0.78, 0.10,0.30,-0.70,
+        0.01,0.05,0.05, 0.10,0.30,-0.70, 0.05,0.18,-0.38,
+        0.01,0.02,0.02, 0.10,0.30,-0.70, 0.08,0.12,-0.58,
+        0.01,0.02,0.02, 0.08,0.12,-0.58, 0.04,0.06,-0.30
+      ]), 3));
+      wingGeo.computeVertexNormals();
+      g.add(new THREE.Mesh(wingGeo, rainbowMat));
+      return g;
+    };
 
-  const wingL = new THREE.Group();
-  wingL.position.set(0.19, 1.38, 0.22);
-  body.add(wingL);
-  wingL.add(createAngelWing());
+    wingL = new THREE.Group();
+    wingL.position.set(0.19, 1.38, 0.22);
+    body.add(wingL);
+    wingL.add(createAngelWing());
 
-  const wingR = new THREE.Group();
-  wingR.position.set(-0.19, 1.38, 0.22);
-  body.add(wingR);
-  const wR = createAngelWing();
-  wR.scale.set(-1, 1, 1);
-  wingR.add(wR);
+    wingR = new THREE.Group();
+    wingR.position.set(-0.19, 1.38, 0.22);
+    body.add(wingR);
+    const wR = createAngelWing();
+    wR.scale.set(-1, 1, 1);
+    wingR.add(wR);
+  }
+
+  // Interactive Click Hitbox for Mounting
+  const hitboxGeo = new THREE.CylinderGeometry(1.6, 1.6, 2.6, 8);
+  const hitboxMat = new THREE.MeshBasicMaterial({ visible: false });
+  const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
+  hitbox.position.set(0, 1.3, 0);
+  group.add(hitbox);
 
   group.position.set(0, 1.3, -12);
 
-  // Cast Shadows
-  group.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
-
-  scene.add(group);
-
   let gallopTimer = 0, flightTimer = 0;
+  let currentHeading = 0;
 
-  return {
+  const unicornObj = {
     group,
     mat: pearlMat,
+    isMounted: false,
+    getInteractiveMeshes: () => [hitbox],
     setAwakened: (val) => { uniforms.uColorAwakened.value = val; },
+    move: (moveVector, delta, cameraEulerY) => {
+      const speed = 12.5;
+      if (moveVector.lengthSq() > 0.001) {
+        group.position.addScaledVector(moveVector, speed * delta);
+        const targetAngle = Math.atan2(moveVector.x, moveVector.z);
+        // Smoothly rotate towards movement heading
+        let diff = targetAngle - currentHeading;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        currentHeading += diff * Math.min(1.0, delta * 10.0);
+        group.rotation.y = currentHeading;
+      }
+
+      // Keep unicorn on meadow / mountain terrain
+      const d = Math.hypot(group.position.x, group.position.z + 12);
+      const groundY = d < 90 ? 0 : Math.pow((d - 90) / 120, 1.7) * 48;
+      group.position.y = 1.3 + groundY;
+    },
     update: (delta, state = 'idle') => {
       uniforms.uTime.value += delta;
 
@@ -249,10 +284,12 @@ export function createUnicorn(scene) {
         body.position.y = Math.sin(t * 1.5) * 0.015;
         tailPivot.rotation.y = Math.sin(t * 2.0) * 0.15;
         tailPivot.rotation.z = Math.sin(t * 1.5) * 0.06;
-        wingL.rotation.set(0.12, 0.08, -0.65 + Math.sin(t * 1.2) * 0.03);
-        wingR.rotation.set(0.12, -0.08, 0.65 - Math.sin(t * 1.2) * 0.03);
+        if (enableWings && wingL && wingR) {
+          wingL.rotation.set(0.12, 0.08, -0.65 + Math.sin(t * 1.2) * 0.03);
+          wingR.rotation.set(0.12, -0.08, 0.65 - Math.sin(t * 1.2) * 0.03);
+        }
       } else if (state === 'gallop' || state === 'ascend') {
-        gallopTimer += delta * 8.0;
+        gallopTimer += delta * 9.5;
         const stride = Math.sin(gallopTimer), strideCos = Math.cos(gallopTimer);
 
         legs[0].hip.rotation.x = stride * 0.65;
@@ -264,13 +301,15 @@ export function createUnicorn(scene) {
         legs[3].hip.rotation.x = strideCos * 0.65;
         legs[3].knee.rotation.x = Math.max(0, -strideCos * 0.7);
 
-        body.position.y = Math.abs(stride) * 0.18;
+        body.position.y = Math.abs(stride) * 0.20;
         neckHeadPivot.rotation.x = stride * 0.08;
         tailPivot.rotation.y = stride * 0.35;
 
-        const flap = Math.sin(gallopTimer * 1.6) * 0.85;
-        wingL.rotation.set(0.2, 0.2, -0.65 + (flap + 0.7) * 0.95);
-        wingR.rotation.set(0.2, -0.2, 0.65 - (flap + 0.7) * 0.95);
+        if (enableWings && wingL && wingR) {
+          const flap = Math.sin(gallopTimer * 1.6) * 0.85;
+          wingL.rotation.set(0.2, 0.2, -0.65 + (flap + 0.7) * 0.95);
+          wingR.rotation.set(0.2, -0.2, 0.65 - (flap + 0.7) * 0.95);
+        }
 
         if (state === 'ascend') {
           flightTimer += delta * 0.4;
@@ -283,4 +322,17 @@ export function createUnicorn(scene) {
       }
     }
   };
+
+  hitbox.userData = { isUnicorn: true, unicorn: unicornObj, data: { isUnicorn: true } };
+
+  // Cast Shadows and attach interactive unicorn reference
+  group.traverse((obj) => {
+    if (obj.isMesh) {
+      if (obj !== hitbox) obj.castShadow = true;
+      obj.userData = { isUnicorn: true, unicorn: unicornObj, data: { isUnicorn: true } };
+    }
+  });
+
+  scene.add(group);
+  return unicornObj;
 }
