@@ -5,17 +5,18 @@ function createDenseGrassTexture(THREE) {
   canvas.width = 128;
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 128, 256);
 
   const blades = [
-    [64, 20, 245, 0],
-    [46, 16, 218, -16],
-    [82, 16, 222, 16],
-    [32, 14, 190, -28],
-    [96, 14, 195, 28],
-    [18, 12, 160, -42],
-    [110, 12, 165, 42],
-    [52, 12, 140, -8],
-    [76, 12, 145, 10]
+    [64, 22, 248, 0],
+    [45, 17, 224, -18],
+    [83, 17, 228, 18],
+    [30, 15, 195, -30],
+    [98, 15, 200, 30],
+    [16, 13, 165, -45],
+    [112, 13, 170, 45],
+    [52, 13, 142, -9],
+    [76, 13, 148, 11]
   ];
 
   blades.forEach(([x, w, h, bend]) => {
@@ -24,12 +25,7 @@ function createDenseGrassTexture(THREE) {
     ctx.quadraticCurveTo(x + bend * 0.4, 256 - h * 0.55, x + bend, 256 - h);
     ctx.quadraticCurveTo(x + bend * 0.6, 256 - h * 0.55, x + w * 0.5, 256);
     ctx.closePath();
-
-    const g = ctx.createLinearGradient(0, 256, 0, 256 - h);
-    g.addColorStop(0, 'rgba(255,255,255,1)');
-    g.addColorStop(0.65, 'rgba(240,255,240,0.95)');
-    g.addColorStop(1, 'rgba(200,255,200,0.85)');
-    ctx.fillStyle = g;
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
   });
 
@@ -55,7 +51,7 @@ export function createGrassField(scene, count = 58000) {
       float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);float n1=sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5,n2=sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5;return smoothstep(0.2,0.85,n1*0.65+n2*0.35);}
       void main(){
         vec4 tex=texture2D(uGrassMap,vUv);
-        if(tex.a<0.18)discard;
+        if(tex.a<0.45)discard;
         float c=cloudN(vWP.xz,uTime);
         vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);
         vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);
@@ -68,13 +64,15 @@ export function createGrassField(scene, count = 58000) {
         vec3 tipCol=mix(mix(vec3(0.072,0.396,0.126),vec3(0.196,0.672,0.266),bVar),mix(vec3(0.238,0.816,0.323),vec3(0.47,1.3,0.514),bVar),c);
         float sFac=shadowOcc*(c*0.42+0.58);
         vec3 tipFinal=mix(mix(vec3(0.14,0.14,0.18),vec3(0.28,0.28,0.34),c),tipCol,uAwakened)*mix(gi,sun,sFac);
-        vec3 col=mix(groundLit,tipFinal,pow(vH,0.85))*(tex.rgb*0.35+0.65);
+        vec3 col=mix(groundLit,tipFinal,pow(vH,0.85));
         float dist=length(vVP);
-        col=mix(col,groundLit,smoothstep(35.0,140.0,dist)*0.96);
-        gl_FragColor=vec4(col,(1.0-smoothstep(110.0,220.0,dist)*0.95)*tex.a);
+        col=mix(col,groundLit,smoothstep(25.0,95.0,dist)*0.96);
+        vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);
+        col=mix(col,fogCol,smoothstep(45.0,195.0,dist)*0.95);
+        gl_FragColor=vec4(col,1.0);
       }`,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.shadowmap, uniforms]),
-    side: THREE.DoubleSide, transparent: true, depthWrite: true
+    side: THREE.DoubleSide, transparent: false, depthWrite: true
   });
 
   const mesh = new THREE.InstancedMesh(bladeGeo, mat, count);

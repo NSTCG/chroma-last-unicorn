@@ -20,7 +20,7 @@ export function createWorld(scene) {
     uAwakened: { value: 0 }
   };
   const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x12141a, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, transparent: true, depthWrite: true
+    color: 0x12141a, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, transparent: false, depthWrite: true
   });
   groundMat.uniforms = groundUniforms;
 
@@ -31,8 +31,10 @@ export function createWorld(scene) {
       float c=cloudN(vWPos.xz,uTime);
       vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);
       vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);
-      gl_FragColor.rgb=gF*mix(gi,sun,c*0.42+0.58);
-      gl_FragColor.a=1.0-smoothstep(110.0,260.0,length(vWPos-cameraPosition))*0.95;`);
+      vec3 groundColor=gF*mix(gi,sun,c*0.42+0.58);
+      vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);
+      gl_FragColor.rgb=mix(groundColor,fogCol,smoothstep(45.0,210.0,length(vWPos-cameraPosition))*0.95);
+      gl_FragColor.a=1.0;`);
   };
 
   const groundGeo = new THREE.PlaneGeometry(550, 550, 48, 48);
