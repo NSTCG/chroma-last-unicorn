@@ -4,7 +4,7 @@ import { getHit } from './controls.js';
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState) {
   const THREE = window.THREE;
   renderer.xr.enabled = true;
-  try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(0); } catch (_) {}
+  try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
   try { renderer.xr.setReferenceSpaceType('local-floor'); } catch (_) {}
 
   const xrGroup = new THREE.Group();
@@ -34,7 +34,11 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   }
 
   renderer.xr.addEventListener('sessionstart', () => {
-    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(0); } catch (_) {}
+    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
+    const s = renderer.xr.getSession();
+    if (s?.renderState?.baseLayer) {
+      try { s.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
+    }
   });
 
   const startVR = async () => {
@@ -51,6 +55,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       camera.updateMatrix();
       camera.updateMatrixWorld(true);
       await renderer.xr.setSession(session);
+      try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
     } catch (err) {
       console.error(err);
     }
