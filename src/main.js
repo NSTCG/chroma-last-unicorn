@@ -51,7 +51,7 @@ class ChromaGame {
     this.camera = this.engine.camera;
     this.renderer = this.engine.renderer;
 
-    this.vrHud = createVRHUD(this.scene, this.camera);
+    this.vrHud = createVRHUD();
     this.sky = createRainbowSky(this.scene);
     this.particles = createParticleSystem(this.scene);
     this.world = createWorld(this.scene);

@@ -4,6 +4,8 @@ import { getHit } from './controls.js';
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState) {
   const THREE = window.THREE;
   renderer.xr.enabled = true;
+  try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(0); } catch (_) {}
+  try { renderer.xr.setReferenceSpaceType('local-floor'); } catch (_) {}
 
   const xrGroup = new THREE.Group();
   scene.add(xrGroup);
@@ -31,6 +33,10 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     controllers.push(controller);
   }
 
+  renderer.xr.addEventListener('sessionstart', () => {
+    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(0); } catch (_) {}
+  });
+
   const startVR = async () => {
     if (!navigator.xr) return alert('WebXR not supported.');
     try {
@@ -38,12 +44,12 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       const session = await navigator.xr.requestSession('immersive-vr', {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       });
-      // Transfer camera world position to xrGroup and reset camera local transform
-      // so WebXR stereo eye cameras render from the correct origin
       xrGroup.position.copy(camera.position);
-      xrGroup.position.y -= 1.6; // account for headset standing height
+      xrGroup.position.y -= 1.6;
       camera.position.set(0, 0, 0);
-      camera.rotation.set(0, 0, 0);
+      camera.quaternion.identity();
+      camera.updateMatrix();
+      camera.updateMatrixWorld(true);
       await renderer.xr.setSession(session);
     } catch (err) {
       console.error(err);
