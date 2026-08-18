@@ -87,7 +87,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
         unicorn.move(moveDir, delta);
         unicorn.update(delta, isMoving ? 'gallop' : 'idle');
         const uPos = unicorn.group.position;
-        camera.position.set(uPos.x, uPos.y + 1.15, uPos.z);
+        camera.position.set(uPos.x, uPos.y + 2.05, uPos.z - 0.2);
       } else {
         if (moveDir.lengthSq() > 0) {
           moveDir.normalize();

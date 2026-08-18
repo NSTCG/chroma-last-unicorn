@@ -1,4 +1,4 @@
-// Procedural Volumetric Distance Fog Cards with Wind Motion & Proximity Dissolve
+// Procedural Volumetric Distance Fog Cards with GPU Camera Billboarding & Wind Motion
 export function createFogCards(scene, count = 24) {
   const THREE = window.THREE;
   const group = new THREE.Group();
@@ -11,7 +11,7 @@ export function createFogCards(scene, count = 24) {
   };
 
   const mat = new THREE.ShaderMaterial({
-    vertexShader: `varying vec2 vUv;varying vec3 vWP,vVP;void main(){vUv=uv;vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+    vertexShader: `varying vec2 vUv;varying vec3 vWP,vVP;void main(){vUv=uv;vec4 wp=modelMatrix*vec4(0.0,0.0,0.0,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(0.0,0.0,0.0,1.0);mv.xy+=position.xy;vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
     fragmentShader: `uniform float uTime,uAwakened,uFogDensity;varying vec2 vUv;varying vec3 vWP,vVP;void main(){float d=length(vVP),pF=smoothstep(18.0,55.0,d),hF=1.0-smoothstep(150.0,230.0,d),edge=pow(sin(vUv.x*3.1416)*sin(vUv.y*3.1416),1.8),t=uTime*0.25,wisp=sin(vWP.x*0.06+vWP.z*0.05+t*0.8)*cos(vWP.z*0.08-vWP.x*0.04-t*0.6)*0.5+0.5;vec3 col=mix(vec3(0.55,0.58,0.68),vec3(0.88,0.62,0.76)+vec3(0.06,0.08,0.12)*sin(t+vWP.x*0.1),uAwakened);gl_FragColor=vec4(col,edge*(0.24+wisp*0.32)*pF*hF*uFogDensity);}`,
     uniforms,
     transparent: true,
@@ -42,7 +42,7 @@ export function createFogCards(scene, count = 24) {
     uniforms,
     setDensity: (v) => { uniforms.uFogDensity.value = v; },
     setAwakened: (v) => { uniforms.uAwakened.value = v; },
-    update: (delta, camera) => {
+    update: (delta) => {
       uniforms.uTime.value += delta;
       const t = uniforms.uTime.value;
       for (let i = 0; i < cards.length; i++) {
@@ -50,8 +50,8 @@ export function createFogCards(scene, count = 24) {
         c.mesh.position.x = c.basePos.x + Math.sin(t * c.driftSpeed + i) * 6.0;
         c.mesh.position.z = c.basePos.z + Math.cos(t * c.driftSpeed * 0.8 + i) * 4.0;
         c.mesh.position.y = c.baseY + Math.sin(t * 0.4 + i * 1.5) * 1.2;
-        if (camera) c.mesh.quaternion.copy(camera.quaternion);
       }
     }
   };
 }
+

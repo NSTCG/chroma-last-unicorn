@@ -122,7 +122,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
           if (isMoving) vrMoveDir.normalize();
           unicorn.move(vrMoveDir, delta);
           unicorn.update(delta, isMoving ? 'gallop' : 'idle');
-          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y + 0.35, unicorn.group.position.z);
+          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y + 1.25, unicorn.group.position.z - 0.2);
         } else {
           if (vrMoveDir.lengthSq() > 0.001) {
             vrMoveDir.normalize();
