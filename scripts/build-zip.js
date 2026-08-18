@@ -28,7 +28,7 @@ async function runBuildPipeline() {
   let scriptFound = null;
 
   while ((match = inlineScriptRegex.exec(html)) !== null) {
-    if (match[1] && match[1].trim().length > 100) {
+    if (match[1] && match[1].trim().length > 100 && !match[1].startsWith("M='")) {
       scriptFound = {
         fullMatch: match[0],
         code: match[1].trim()

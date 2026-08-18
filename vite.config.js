@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
       __DEV__: JSON.stringify(isDev)
     },
     build: {
+      emptyOutDir: true,
       target: 'esnext',
       minify: 'terser',
       terserOptions: {
