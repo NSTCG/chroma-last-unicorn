@@ -29,23 +29,28 @@ export default defineConfig(({ mode }) => {
       target: 'esnext',
       minify: 'terser',
       terserOptions: {
+        ecma: 2020,
+        module: true,
+        toplevel: true,
         compress: {
           drop_console: !isDev,
           drop_debugger: !isDev,
-          passes: 3,
+          passes: 5,
           unsafe: true,
           unsafe_arrows: true,
           unsafe_comps: true,
           unsafe_math: true,
           unsafe_methods: true,
-          pure_getters: true
+          pure_getters: true,
+          booleans_as_integers: true
         },
         mangle: {
           toplevel: true,
           properties: false // keep Three.js API calls safe
         },
         format: {
-          comments: false
+          comments: false,
+          wrap_func_args: false
         }
       },
       rollupOptions: {

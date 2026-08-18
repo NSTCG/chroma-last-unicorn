@@ -50,13 +50,13 @@ async function runBuildPipeline() {
           }
         ],
         {
-          numAbbreviations: 64,
+          numAbbreviations: 128,
           allowFreeVars: true
         }
       );
 
-      // Fast level 1 optimization runs in ~2 seconds
-      await packer.optimize(1);
+      // Deep Level 2 optimization for JS13k competition budget
+      await packer.optimize(2);
       const { firstLine, secondLine } = packer.makeDecoder();
       const packedJs = `${firstLine}\n${secondLine}`;
 
@@ -64,6 +64,13 @@ async function runBuildPipeline() {
 
       // Replace with packed script
       html = html.replace(scriptFound.fullMatch, `<script>${packedJs}</script>`);
+      
+      // Minify HTML structure
+      html = html
+        .replace(/\n\s*/g, '')
+        .replace(/>\s+</g, '><')
+        .trim();
+
       fs.writeFileSync(htmlPath, html, 'utf-8');
     } catch (e) {
       console.warn('\x1b[33mRoadroller step encountered warning, continuing with terser bundle:\x1b[0m', e.message);

@@ -1,63 +1,25 @@
 // Celestial Unicorn with Crisp Cel-Toon Outlines, Shadow Casting & Dynamic Flight
+import { getTerrainHeight } from './world.js';
 
-// Feature Flag: Set to true to include angel wings on the unicorn.
-// When false (default), wing geometry, meshes, and animation code are stripped by the bundler compiler.
-export const ENABLE_UNICORN_WINGS = false;
-
-export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}) {
+export function createUnicorn(scene) {
   const THREE = window.THREE;
   const group = new THREE.Group();
-  const uniforms = { uTime: { value: 0 }, uColorAwakened: { value: 0.0 } };
+  const uniforms = { uTime: { value: 0 }, uColorAwakened: { value: 0 } };
 
-  const vertexShader = `
-    varying vec3 vN,vWP,vVP;
-    void main(){
-      vN=normalize(normalMatrix*normal);
-      vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;
-      vec4 mv=modelViewMatrix*vec4(position,1.0);vVP=-mv.xyz;
-      gl_Position=projectionMatrix*mv;
-    }
-  `;
-
-  const fragmentShader = `
-    uniform float uTime,uColorAwakened,uMat;
-    varying vec3 vN,vWP,vVP;
-    vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(1.0)*t+vec3(0.0,0.33,0.67)));}
-    void main(){
-      vec3 N=normalize(gl_FrontFacing?vN:-vN),V=normalize(vVP);
-      vec3 L=normalize(vec3(0.5,1.0,0.4));
-      float d=max(dot(N,L),0.0);
-      float toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6;
-      float spec=pow(max(dot(reflect(-L,N),V),0.0),20.0);
-      float fr=pow(1.0-max(dot(N,V),0.0),2.2);
-
-      // Bold, crisp ink outline for cel-shading
-      float outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));
-
-      vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45;
-      vec3 gold=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65;
-      vec3 hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9);
-
-      vec3 base=uMat>1.5?hair:(uMat>0.5?gold:pearl);
-      vec3 ink=vec3(0.04,0.02,0.07);
-
-      // Always full celestial color, with bold ink outline
-      vec3 col=mix(base+spec*0.45, ink, outl*0.95);
-      gl_FragColor=vec4(col,1.0-smoothstep(90.0,240.0,length(vVP))*0.65);
-    }
-  `;
+  const vs = `varying vec3 vN,vWP,vV;void main(){vN=normalize(normalMatrix*normal);vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}`;
+  const fs = `uniform float uTime,uMat;varying vec3 vN,vWP,vV;vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(1.0)*t+vec3(0.0,0.33,0.67)));}void main(){vec3 N=normalize(gl_FrontFacing?vN:-vN),V=normalize(vV),L=normalize(vec3(0.5,1.0,0.4));float d=max(dot(N,L),0.0),toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6,spec=pow(max(dot(reflect(-L,N),V),0.0),20.0),fr=pow(1.0-max(dot(N,V),0.0),2.2),outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45,gold=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65,hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9),base=uMat>1.5?hair:(uMat>0.5?gold:pearl),col=mix(base+spec*0.45,vec3(0.04,0.02,0.07),outl*0.95);gl_FragColor=vec4(col,1.0);}`;
 
   const makeMat = (uMat) => new THREE.ShaderMaterial({
-    vertexShader, fragmentShader,
+    vertexShader: vs, fragmentShader: fs,
     uniforms: { ...uniforms, uMat: { value: uMat } },
     side: THREE.DoubleSide, transparent: true, depthWrite: true
   });
 
-  const pearlMat = makeMat(0.0), goldMat = makeMat(1.0), rainbowMat = makeMat(2.0);
+  const pearlMat = makeMat(0), goldMat = makeMat(1), rainbowMat = makeMat(2);
   const body = new THREE.Group();
   group.add(body);
 
-  // 1. Torso
+  // Torso
   const chestGeo = new THREE.SphereGeometry(0.38, 8, 8);
   chestGeo.scale(0.9, 1.15, 1.15);
   const chest = new THREE.Mesh(chestGeo, pearlMat);
@@ -67,7 +29,7 @@ export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}
   barrelGeo.rotateX(Math.PI / 2);
   barrelGeo.scale(0.9, 1.15, 1.0);
   const barrel = new THREE.Mesh(barrelGeo, pearlMat);
-  barrel.position.set(0, 1.25, 0.0);
+  barrel.position.set(0, 1.25, 0);
 
   const rumpGeo = new THREE.SphereGeometry(0.27, 8, 8);
   rumpGeo.scale(0.9, 1.08, 1.08);
@@ -75,66 +37,46 @@ export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}
   rump.position.set(0, 1.20, -0.45);
   body.add(chest, barrel, rump);
 
-  // 2. Neck & Head
   const neckHeadPivot = new THREE.Group();
   body.add(neckHeadPivot);
 
-  const rings = [
+  const buildLoft = (rings, segs, tip) => {
+    const verts = [], inds = [];
+    rings.forEach(([rz, ry, rx, rry]) => {
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        verts.push(Math.cos(a) * rx, ry + Math.sin(a) * (rry || rx), rz);
+      }
+    });
+    const tipIdx = verts.length / 3;
+    if (tip) verts.push(...tip);
+    for (let r = 0; r < rings.length - 1; r++) {
+      const r0 = r * segs, r1 = (r + 1) * segs;
+      for (let i = 0; i < segs; i++) inds.push(r0 + i, r0 + (i + 1) % segs, r1 + (i + 1) % segs, r0 + i, r1 + (i + 1) % segs, r1 + i);
+    }
+    if (tip) {
+      const lr = (rings.length - 1) * segs;
+      for (let i = 0; i < segs; i++) inds.push(lr + i, lr + (i + 1) % segs, tipIdx);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+    geo.setIndex(inds);
+    geo.computeVertexNormals();
+    return geo;
+  };
+
+  const neckGeo = buildLoft([
     [0.44,1.30,0.22,0.28],[0.62,1.54,0.18,0.23],[0.82,1.76,0.14,0.18],
     [1.02,1.94,0.12,0.15],[1.20,1.94,0.13,0.14],[1.38,1.78,0.09,0.10],[1.56,1.66,0.06,0.07]
-  ];
-  const segs = 8, verts = [], inds = [];
-  rings.forEach(([rz, ry, rx, rry]) => {
-    for (let i = 0; i < segs; i++) {
-      const a = (i / segs) * Math.PI * 2;
-      verts.push(Math.cos(a) * rx, ry + Math.sin(a) * rry, rz);
-    }
-  });
-  const tipIdx = verts.length / 3;
-  verts.push(0, 1.64, 1.62);
+  ], 8, [0, 1.64, 1.62]);
+  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat));
 
-  for (let r = 0; r < rings.length - 1; r++) {
-    const r0 = r * segs, r1 = (r + 1) * segs;
-    for (let i = 0; i < segs; i++) {
-      const n = (i + 1) % segs;
-      inds.push(r0 + i, r0 + n, r1 + n, r0 + i, r1 + n, r1 + i);
-    }
-  }
-  const lastRing = (rings.length - 1) * segs;
-  for (let i = 0; i < segs; i++) inds.push(lastRing + i, lastRing + (i + 1) % segs, tipIdx);
-
-  const neckHeadGeo = new THREE.BufferGeometry();
-  neckHeadGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
-  neckHeadGeo.setIndex(inds);
-  neckHeadGeo.computeVertexNormals();
-  neckHeadPivot.add(new THREE.Mesh(neckHeadGeo, pearlMat));
-
-  // Balanced Organic Mane Crest
-  const mRings = [
-    [0,2.02,0.96,0.024,0.038],[0,1.92,0.82,0.035,0.065],[0,1.76,0.66,0.042,0.088],
-    [0,1.60,0.48,0.045,0.092],[0,1.44,0.32,0.024,0.038]
-  ];
-  const mSegs = 6, mVerts = [], mInds = [];
-  mRings.forEach(([mx, my, mz, mrx, mry]) => {
-    for (let i = 0; i < mSegs; i++) {
-      const a = (i / mSegs) * Math.PI * 2;
-      mVerts.push(mx + Math.cos(a) * mrx, my + Math.sin(a) * mry, mz);
-    }
-  });
-  for (let r = 0; r < mRings.length - 1; r++) {
-    const r0 = r * mSegs, r1 = (r + 1) * mSegs;
-    for (let i = 0; i < mSegs; i++) {
-      const n = (i + 1) % mSegs;
-      mInds.push(r0 + i, r0 + n, r1 + n, r0 + i, r1 + n, r1 + i);
-    }
-  }
-  const maneGeo = new THREE.BufferGeometry();
-  maneGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mVerts), 3));
-  maneGeo.setIndex(mInds);
-  maneGeo.computeVertexNormals();
+  const maneGeo = buildLoft([
+    [0.96,2.02,0.024,0.038],[0.82,1.92,0.035,0.065],[0.66,1.76,0.042,0.088],
+    [0.48,1.60,0.045,0.092],[0.32,1.44,0.024,0.038]
+  ], 6);
   neckHeadPivot.add(new THREE.Mesh(maneGeo, rainbowMat));
 
-  // Ears & Horn
   const earGeo = new THREE.ConeGeometry(0.04, 0.20, 5);
   const earL = new THREE.Mesh(earGeo, pearlMat);
   earL.position.set(0.075, 2.08, 1.12);
@@ -151,104 +93,46 @@ export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}
   horn.position.set(0, 1.96, 1.22);
   neckHeadPivot.add(horn);
 
-  // 3. Volumetric Closed 3D Tail
   const tailPivot = new THREE.Group();
   tailPivot.position.set(0, 1.24, -0.55);
   body.add(tailPivot);
 
-  const tailRings = [
-    [0,0,0,0.06],[0,0.04,-0.18,0.09],[0,-0.25,-0.36,0.11],[0,-0.52,-0.44,0.08],[0,-0.78,-0.40,0.02]
-  ];
-  const tSegs = 6, tVerts = [], tInds = [];
-  tailRings.forEach(([tx, ty, tz, tr]) => {
-    for (let i = 0; i < tSegs; i++) {
-      const a = (i / tSegs) * Math.PI * 2;
-      tVerts.push(tx + Math.cos(a) * tr, ty + Math.sin(a) * tr, tz);
-    }
-  });
-  for (let r = 0; r < tailRings.length - 1; r++) {
-    const r0 = r * tSegs, r1 = (r + 1) * tSegs;
-    for (let i = 0; i < tSegs; i++) {
-      const n = (i + 1) % tSegs;
-      tInds.push(r0 + i, r0 + n, r1 + n, r0 + i, r1 + n, r1 + i);
-    }
-  }
-  const tailGeo = new THREE.BufferGeometry();
-  tailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tVerts), 3));
-  tailGeo.setIndex(tInds);
-  tailGeo.computeVertexNormals();
+  const tailGeo = buildLoft([
+    [0,0,0.06],[ -0.18,0.04,0.09],[ -0.36,-0.25,0.11],[ -0.44,-0.52,0.08],[ -0.40,-0.78,0.02]
+  ], 6);
   tailPivot.add(new THREE.Mesh(tailGeo, rainbowMat));
 
-  // 4. Four Standing Anatomical Legs
+  // Shared Leg Geometries
+  const uGeo = new THREE.CylinderGeometry(0.1, 0.065, 0.55, 6);
+  uGeo.translate(0, -0.275, 0);
+  const lGeo = new THREE.CylinderGeometry(0.055, 0.045, 0.52, 6);
+  lGeo.translate(0, -0.26, 0);
+  const hoofGeo = new THREE.CylinderGeometry(0.045, 0.075, 0.12, 6);
+  hoofGeo.translate(0, -0.57, 0.012);
+
   const legs = [
     [0.18,0.42,true],[-0.18,0.42,true],[0.15,-0.45,false],[-0.15,-0.45,false]
   ].map(([x, z, isFront]) => {
     const hip = new THREE.Group();
     hip.position.set(x, isFront ? 1.18 : 1.10, z);
     body.add(hip);
-
-    const uGeo = new THREE.CylinderGeometry(isFront ? 0.095 : 0.115, 0.065, 0.55, 6);
-    uGeo.translate(0, -0.275, 0);
     hip.add(new THREE.Mesh(uGeo, pearlMat));
 
     const knee = new THREE.Group();
     knee.position.set(0, -0.55, 0);
     hip.add(knee);
-
-    const lGeo = new THREE.CylinderGeometry(0.055, 0.045, 0.52, 6);
-    lGeo.translate(0, -0.26, 0);
     knee.add(new THREE.Mesh(lGeo, pearlMat));
-
-    const hoofGeo = new THREE.CylinderGeometry(0.045, 0.075, 0.12, 7);
-    hoofGeo.translate(0, -0.57, 0.012);
     knee.add(new THREE.Mesh(hoofGeo, goldMat));
 
     return { hip, knee };
   });
 
-  // 5. Classic Angel Wings (Folded Sideways Along Flank) - Guarded by enableWings
-  let wingL = null, wingR = null;
-  if (enableWings) {
-    const createAngelWing = () => {
-      const g = new THREE.Group();
-      const wingGeo = new THREE.BufferGeometry();
-      wingGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-        0.01,0.05,0.05, 0.06,0.78,-0.10, 0.12,0.52,-0.78,
-        0.01,0.05,0.05, 0.12,0.52,-0.78, 0.06,0.32,-0.42,
-        0.01,0.05,0.05, 0.12,0.52,-0.78, 0.10,0.30,-0.70,
-        0.01,0.05,0.05, 0.10,0.30,-0.70, 0.05,0.18,-0.38,
-        0.01,0.02,0.02, 0.10,0.30,-0.70, 0.08,0.12,-0.58,
-        0.01,0.02,0.02, 0.08,0.12,-0.58, 0.04,0.06,-0.30
-      ]), 3));
-      wingGeo.computeVertexNormals();
-      g.add(new THREE.Mesh(wingGeo, rainbowMat));
-      return g;
-    };
-
-    wingL = new THREE.Group();
-    wingL.position.set(0.19, 1.38, 0.22);
-    body.add(wingL);
-    wingL.add(createAngelWing());
-
-    wingR = new THREE.Group();
-    wingR.position.set(-0.19, 1.38, 0.22);
-    body.add(wingR);
-    const wR = createAngelWing();
-    wR.scale.set(-1, 1, 1);
-    wingR.add(wR);
-  }
-
-  // Interactive Click Hitbox for Mounting
-  const hitboxGeo = new THREE.CylinderGeometry(1.6, 1.6, 2.6, 8);
-  const hitboxMat = new THREE.MeshBasicMaterial({ visible: false });
-  const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
+  const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 2.6, 6), new THREE.MeshBasicMaterial({ visible: false }));
   hitbox.position.set(0, 1.3, 0);
   group.add(hitbox);
+  group.position.set(0, getTerrainHeight(0, -12) + 1.0, -12);
 
-  group.position.set(0, 1.3, -12);
-
-  let gallopTimer = 0, flightTimer = 0;
-  let currentHeading = 0;
+  let gallopTimer = 0, flightTimer = 0, currentHeading = 0;
 
   const unicornObj = {
     group,
@@ -256,67 +140,57 @@ export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}
     isMounted: false,
     getInteractiveMeshes: () => [hitbox],
     setAwakened: (val) => { uniforms.uColorAwakened.value = val; },
-    move: (moveVector, delta, cameraEulerY) => {
-      const speed = 12.5;
+    move: (moveVector, delta) => {
       if (moveVector.lengthSq() > 0.001) {
-        group.position.addScaledVector(moveVector, speed * delta);
+        group.position.addScaledVector(moveVector, 12.5 * delta);
         const targetAngle = Math.atan2(moveVector.x, moveVector.z);
-        // Smoothly rotate towards movement heading
         let diff = targetAngle - currentHeading;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
-        currentHeading += diff * Math.min(1.0, delta * 10.0);
+        currentHeading += diff * Math.min(1.0, delta * 12.0);
         group.rotation.y = currentHeading;
       }
-
-      // Keep unicorn on meadow / mountain terrain
-      const d = Math.hypot(group.position.x, group.position.z + 12);
-      const groundY = d < 90 ? 0 : Math.pow((d - 90) / 120, 1.7) * 48;
-      group.position.y = 1.3 + groundY;
+      group.position.y = getTerrainHeight(group.position.x, group.position.z) + 1.0;
     },
     update: (delta, state = 'idle') => {
       uniforms.uTime.value += delta;
+      const t = uniforms.uTime.value;
 
       if (state === 'idle') {
-        const t = uniforms.uTime.value;
-        neckHeadPivot.rotation.x = Math.sin(t * 1.5) * 0.025;
-        neckHeadPivot.rotation.y = Math.sin(t * 0.8) * 0.04;
-        body.position.y = Math.sin(t * 1.5) * 0.015;
+        const rr = Math.min(1.0, delta * 14.0);
+        for (let i = 0; i < 4; i++) {
+          legs[i].hip.rotation.x += (0 - legs[i].hip.rotation.x) * rr;
+          legs[i].hip.rotation.y += (0 - legs[i].hip.rotation.y) * rr;
+          legs[i].hip.rotation.z += (0 - legs[i].hip.rotation.z) * rr;
+          legs[i].knee.rotation.x += (0 - legs[i].knee.rotation.x) * rr;
+        }
+        neckHeadPivot.rotation.x += (Math.sin(t * 1.5) * 0.025 - neckHeadPivot.rotation.x) * rr;
+        neckHeadPivot.rotation.y += (Math.sin(t * 0.8) * 0.04 - neckHeadPivot.rotation.y) * rr;
+        body.position.y += (Math.sin(t * 1.5) * 0.015 - body.position.y) * rr;
         tailPivot.rotation.y = Math.sin(t * 2.0) * 0.15;
         tailPivot.rotation.z = Math.sin(t * 1.5) * 0.06;
-        if (enableWings && wingL && wingR) {
-          wingL.rotation.set(0.12, 0.08, -0.65 + Math.sin(t * 1.2) * 0.03);
-          wingR.rotation.set(0.12, -0.08, 0.65 - Math.sin(t * 1.2) * 0.03);
-        }
       } else if (state === 'gallop' || state === 'ascend') {
         gallopTimer += delta * 9.5;
-        const stride = Math.sin(gallopTimer), strideCos = Math.cos(gallopTimer);
+        const s = Math.sin(gallopTimer), c = Math.cos(gallopTimer);
+        legs[0].hip.rotation.x = s * 0.65;
+        legs[0].knee.rotation.x = Math.max(0, -s * 0.7);
+        legs[1].hip.rotation.x = -s * 0.65;
+        legs[1].knee.rotation.x = Math.max(0, s * 0.7);
+        legs[2].hip.rotation.x = -c * 0.65;
+        legs[2].knee.rotation.x = Math.max(0, c * 0.7);
+        legs[3].hip.rotation.x = c * 0.65;
+        legs[3].knee.rotation.x = Math.max(0, -c * 0.7);
 
-        legs[0].hip.rotation.x = stride * 0.65;
-        legs[0].knee.rotation.x = Math.max(0, -stride * 0.7);
-        legs[1].hip.rotation.x = -stride * 0.65;
-        legs[1].knee.rotation.x = Math.max(0, stride * 0.7);
-        legs[2].hip.rotation.x = -strideCos * 0.65;
-        legs[2].knee.rotation.x = Math.max(0, strideCos * 0.7);
-        legs[3].hip.rotation.x = strideCos * 0.65;
-        legs[3].knee.rotation.x = Math.max(0, -strideCos * 0.7);
-
-        body.position.y = Math.abs(stride) * 0.20;
-        neckHeadPivot.rotation.x = stride * 0.08;
-        tailPivot.rotation.y = stride * 0.35;
-
-        if (enableWings && wingL && wingR) {
-          const flap = Math.sin(gallopTimer * 1.6) * 0.85;
-          wingL.rotation.set(0.2, 0.2, -0.65 + (flap + 0.7) * 0.95);
-          wingR.rotation.set(0.2, -0.2, 0.65 - (flap + 0.7) * 0.95);
-        }
+        body.position.y = Math.abs(s) * 0.18;
+        neckHeadPivot.rotation.x = s * 0.08;
+        tailPivot.rotation.y = s * 0.35;
 
         if (state === 'ascend') {
           flightTimer += delta * 0.4;
-          const radius = 16 + Math.sin(flightTimer * 1.2) * 4;
-          group.position.x = Math.sin(flightTimer * 2.2) * radius;
-          group.position.z = -12 + Math.cos(flightTimer * 2.2) * radius;
-          group.position.y = 1.3 + 1.5 + Math.sin(flightTimer * 4.0) * 0.8 + flightTimer * 3.2;
+          const rad = 16 + Math.sin(flightTimer * 1.2) * 4;
+          group.position.x = Math.sin(flightTimer * 2.2) * rad;
+          group.position.z = -12 + Math.cos(flightTimer * 2.2) * rad;
+          group.position.y = 2.8 + Math.sin(flightTimer * 4.0) * 0.8 + flightTimer * 3.2;
           group.rotation.y = flightTimer * 2.2 + Math.PI / 2;
         }
       }
@@ -325,7 +199,6 @@ export function createUnicorn(scene, { enableWings = ENABLE_UNICORN_WINGS } = {}
 
   hitbox.userData = { isUnicorn: true, unicorn: unicornObj, data: { isUnicorn: true } };
 
-  // Cast Shadows and attach interactive unicorn reference
   group.traverse((obj) => {
     if (obj.isMesh) {
       if (obj !== hitbox) obj.castShadow = true;

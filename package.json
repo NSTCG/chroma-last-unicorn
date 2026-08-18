@@ -9,7 +9,10 @@
     "build:zip": "vite build && node scripts/build-zip.js",
     "preview": "vite preview",
     "check-size": "node scripts/build-zip.js",
-    "push": "node scripts/push.js"
+    "push": "node scripts/push.js",
+    "quest": "node scripts/quest-launch.js",
+    "quest:preview": "node scripts/quest-launch.js --preview",
+    "quest:open": "node scripts/quest-launch.js --open-only"
   },
   "devDependencies": {
     "jszip": "^3.10.1",

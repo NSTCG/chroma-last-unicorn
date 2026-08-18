@@ -1,103 +1,72 @@
-// Desktop PC Controls (PointerLock + Mouse Look + Keyboard Movement & Unicorn Riding)
+import { getTerrainHeight } from '../models/world.js';
 
 export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState) {
   const THREE = window.THREE;
-  let isLocked = false;
-  let isMouseDown = false;
-  let prevMouseX = 0, prevMouseY = 0;
-  const keys = {};
-  const moveSpeed = 8.5;
-
+  let isLocked = false, isMouseDown = false, prevMouseX = 0, prevMouseY = 0;
+  const keys = {}, moveSpeed = 8.5;
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
   const raycaster = new THREE.Raycaster();
   const screenCenter = new THREE.Vector2(0, 0);
   const crosshair = document.getElementById('crosshair');
 
-  const onMouseMove = (movementX, movementY) => {
+  const onMouseMove = (mx, my) => {
     euler.setFromQuaternion(camera.quaternion);
-    euler.y -= movementX * 0.0022;
-    euler.x -= movementY * 0.0022;
-    euler.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.x));
+    euler.y -= mx * 0.0022;
+    euler.x = Math.max(-1.52, Math.min(1.52, euler.x - my * 0.0022));
     camera.quaternion.setFromEuler(euler);
   };
 
   document.addEventListener('mousemove', (e) => {
-    if (isLocked) {
-      onMouseMove(e.movementX || 0, e.movementY || 0);
-    } else if (isMouseDown) {
-      const dx = e.clientX - prevMouseX;
-      const dy = e.clientY - prevMouseY;
-      prevMouseX = e.clientX;
-      prevMouseY = e.clientY;
-      onMouseMove(dx, dy);
+    if (isLocked) onMouseMove(e.movementX || 0, e.movementY || 0);
+    else if (isMouseDown) {
+      onMouseMove(e.clientX - prevMouseX, e.clientY - prevMouseY);
+      prevMouseX = e.clientX; prevMouseY = e.clientY;
     }
   });
 
   const tryInteract = () => {
     raycaster.setFromCamera(screenCenter, camera);
-    const targets = getInteractiveObjects();
-    const hits = raycaster.intersectObjects(targets, true);
+    const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
     let hitObj = null;
     if (hits.length > 0) {
       let hit = hits[0].object;
       while (hit && !hit.userData?.data && hit.parent) hit = hit.parent;
       if (hit?.userData?.data) hitObj = hit;
     }
-    // Always dispatch onSelectObject so clicks trigger mount/slide/shard
     onSelectObject(hitObj);
   };
 
   domElement.addEventListener('mousedown', (e) => {
     isMouseDown = true;
-    prevMouseX = e.clientX;
-    prevMouseY = e.clientY;
+    prevMouseX = e.clientX; prevMouseY = e.clientY;
     if (!isLocked && domElement.requestPointerLock) {
       try { domElement.requestPointerLock(); } catch (_) {}
     }
     tryInteract();
   });
 
-  window.addEventListener('mouseup', () => {
-    isMouseDown = false;
-  });
-
-  document.addEventListener('pointerlockchange', () => {
-    isLocked = document.pointerLockElement === domElement;
-  });
+  window.addEventListener('mouseup', () => { isMouseDown = false; });
+  document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === domElement; });
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
-    if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') {
-      tryInteract();
-    }
+    if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') tryInteract();
   });
+  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-  window.addEventListener('keyup', (e) => {
-    keys[e.code] = false;
-  });
-
-  const moveDir = new THREE.Vector3();
-  const forward = new THREE.Vector3();
-  const right = new THREE.Vector3();
+  const moveDir = new THREE.Vector3(), forward = new THREE.Vector3(), right = new THREE.Vector3();
 
   return {
     isLocked: () => isLocked,
     update: (delta) => {
       raycaster.setFromCamera(screenCenter, camera);
-      const targets = getInteractiveObjects();
-      const hits = raycaster.intersectObjects(targets, true);
+      const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
+      if (crosshair) crosshair.classList.toggle('active', hits.length > 0 && hits[0].distance < 30);
 
-      if (crosshair) {
-        if (hits.length > 0 && hits[0].distance < 30) crosshair.classList.add('active');
-        else crosshair.classList.remove('active');
-      }
-
-      // Keyboard WASD Movement
       moveDir.set(0, 0, 0);
       camera.getWorldDirection(forward);
-      forward.y = 0;
-      forward.normalize();
-      right.crossVectors(camera.up, forward).negate().normalize();
+      forward.y = 0; forward.normalize();
+      right.crossVectors(forward, camera.up).normalize();
 
       if (keys['KeyW'] || keys['ArrowUp']) moveDir.add(forward);
       if (keys['KeyS'] || keys['ArrowDown']) moveDir.sub(forward);
@@ -108,43 +77,28 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
       const unicorn = getUnicornState ? getUnicornState().unicorn : null;
 
       if (isMounted && unicorn) {
-        // RIDING UNICORN
         const isMoving = moveDir.lengthSq() > 0.001;
         if (isMoving) moveDir.normalize();
-
-        unicorn.move(moveDir, delta, euler.y);
+        unicorn.move(moveDir, delta);
         unicorn.update(delta, isMoving ? 'gallop' : 'idle');
-
-        // Camera stays locked in riding saddle view with gentle gallop bob
         const uPos = unicorn.group.position;
-        camera.position.set(uPos.x, uPos.y + 1.85, uPos.z);
+        camera.position.set(uPos.x, uPos.y + 1.15, uPos.z);
       } else {
-        // WALKING ON FOOT
         if (moveDir.lengthSq() > 0) {
           moveDir.normalize();
           camera.position.addScaledVector(moveDir, moveSpeed * delta);
         }
-
         if (keys['Space']) camera.position.y += moveSpeed * 0.7 * delta;
         if (keys['ShiftLeft'] || keys['KeyC']) camera.position.y = Math.max(1.7, camera.position.y - moveSpeed * 0.7 * delta);
 
-        // Keep player on ground plane if not floating
-        const d = Math.hypot(camera.position.x, camera.position.z + 12);
-        const groundY = d < 90 ? 0 : Math.pow((d - 90) / 120, 1.7) * 48;
-        if (camera.position.y < groundY + 1.7) {
-          camera.position.y = groundY + 1.7;
-        }
+        const groundY = getTerrainHeight(camera.position.x, camera.position.z);
+        if (camera.position.y < groundY + 1.7) camera.position.y = groundY + 1.7;
 
-        // Play area boundary clamping (Expanded vast sanctuary)
-        const dx = camera.position.x;
-        const dz = camera.position.z - (-12);
-        const dist = Math.hypot(dx, dz);
-        const MAX_R = 92.0;
-
-        if (dist > MAX_R) {
-          const angle = Math.atan2(dz, dx);
-          camera.position.x = Math.cos(angle) * MAX_R;
-          camera.position.z = -12 + Math.sin(angle) * MAX_R;
+        const dist = Math.hypot(camera.position.x, camera.position.z + 12);
+        if (dist > 92.0) {
+          const a = Math.atan2(camera.position.z + 12, camera.position.x);
+          camera.position.x = Math.cos(a) * 92.0;
+          camera.position.z = -12 + Math.sin(a) * 92.0;
         }
         camera.position.y = Math.min(Math.max(1.5, camera.position.y), 55.0);
       }

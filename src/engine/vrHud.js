@@ -1,9 +1,7 @@
-// In-World 3D VR & PC Text Billboard System
-
 export function createVRHUD(scene, camera) {
   const THREE = window.THREE;
   const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 180;
+  canvas.width = 384; canvas.height = 140;
   const ctx = canvas.getContext('2d');
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -13,34 +11,30 @@ export function createVRHUD(scene, camera) {
   mesh.position.set(0, 0, -2.0);
   camera.add(mesh);
 
-  let curTitle = '', curSub = '', curAct = '', opacity = 0.0, targetOp = 0.0, timer = null;
+  let curTitle = '', curSub = '', curAct = '', opacity = 0, targetOp = 0, timer = null;
 
   function draw() {
-    ctx.clearRect(0, 0, 512, 180);
+    ctx.clearRect(0, 0, 384, 140);
     if (opacity <= 0.01) { texture.needsUpdate = true; return; }
 
     ctx.globalAlpha = opacity * 0.9;
     ctx.fillStyle = '#0a0d18';
-    ctx.beginPath();
-    ctx.roundRect(10, 10, 492, 160, 16);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.stroke();
+    ctx.fillRect(8, 8, 368, 124);
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px system-ui';
-    ctx.fillText(curTitle, 256, 45);
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(curTitle, 192, 38);
 
     if (curSub) {
       ctx.fillStyle = '#a0d8ef';
-      ctx.font = '15px system-ui';
-      ctx.fillText(curSub, 256, 82);
+      ctx.font = '13px sans-serif';
+      ctx.fillText(curSub, 192, 70);
     }
     if (curAct) {
       ctx.fillStyle = '#ffea79';
-      ctx.font = 'italic bold 14px system-ui';
-      ctx.fillText(curAct, 256, 120);
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(curAct, 192, 102);
     }
     texture.needsUpdate = true;
   }
@@ -55,7 +49,7 @@ export function createVRHUD(scene, camera) {
         el.style.opacity = '1';
       }
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { targetOp = 0.0; if (el) el.style.opacity = '0.35'; }, dur);
+      timer = setTimeout(() => { targetOp = 0; if (el) el.style.opacity = '0.35'; }, dur);
     },
     update: (delta) => {
       if (Math.abs(opacity - targetOp) > 0.01) {

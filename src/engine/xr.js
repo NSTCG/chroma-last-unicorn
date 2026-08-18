@@ -1,36 +1,31 @@
-// WebXR VR Controller Manager with Locomotion, Punch Detection, Snap Turn & Haptics
+import { getTerrainHeight } from '../models/world.js';
 
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState) {
   const THREE = window.THREE;
   renderer.xr.enabled = true;
+  try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
 
   const xrGroup = new THREE.Group();
   scene.add(xrGroup);
   xrGroup.add(camera);
 
-  const controllers = [];
-  const raycaster = new THREE.Raycaster();
-  const tempMatrix = new THREE.Matrix4();
+  const controllers = [], raycaster = new THREE.Raycaster(), tempMatrix = new THREE.Matrix4();
   const lastPositions = [new THREE.Vector3(), new THREE.Vector3()];
+  const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
 
-  // VR Controller Grip and Input Setup
   for (let i = 0; i < 2; i++) {
     const controller = renderer.xr.getController(i);
-    const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
-    const laserMat = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
-    const laser = new THREE.Line(laserGeo, laserMat);
+    const laser = new THREE.Line(laserGeo, new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 }));
     laser.scale.z = 25;
     controller.add(laser);
 
     controller.addEventListener('selectstart', () => {
       if (onActZeroTrigger) onActZeroTrigger();
-
       tempMatrix.identity().extractRotation(controller.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
       raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-      const targets = getInteractiveObjects();
-      const hits = raycaster.intersectObjects(targets, true);
+      const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
       let hitObj = null;
       if (hits.length > 0) {
         let hit = hits[0].object;
@@ -44,32 +39,38 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     controllers.push(controller);
   }
 
-  // VR Session Launch Helper
-  const startVR = async () => {
-    if (!navigator.xr) {
-      alert('WebXR is not supported in this browser.');
-      return;
+  renderer.xr.addEventListener('sessionstart', async () => {
+    const session = renderer.xr.getSession();
+    if (!session) return;
+    if (session.updateTargetFrameRate) {
+      try {
+        const rate72 = session.supportedFrameRates ? (Array.from(session.supportedFrameRates).find(r => Math.round(r) === 72) || 72) : 72;
+        await session.updateTargetFrameRate(rate72);
+      } catch (_) {}
     }
+    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
+    const applyFov = () => {
+      try { if (session.renderState?.baseLayer) session.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
+    };
+    applyFov();
+    setTimeout(applyFov, 200);
+  });
+
+  const startVR = async () => {
+    if (!navigator.xr) return alert('WebXR not supported.');
     try {
-      const isSupported = await navigator.xr.isSessionSupported('immersive-vr');
-      if (!isSupported) {
-        alert('Immersive VR mode is not supported on this display/device.');
-        return;
-      }
+      if (!(await navigator.xr.isSessionSupported('immersive-vr'))) return alert('VR not supported.');
       const session = await navigator.xr.requestSession('immersive-vr', {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       });
-      renderer.xr.setSession(session);
+      await renderer.xr.setSession(session);
     } catch (err) {
-      console.error('Failed to start WebXR session:', err);
+      console.error(err);
     }
   };
 
   let snapTurnCooldown = 0;
-  const forwardVec = new THREE.Vector3();
-  const rightVec = new THREE.Vector3();
-  const currentPos = new THREE.Vector3();
-  const vrMoveDir = new THREE.Vector3();
+  const forwardVec = new THREE.Vector3(), rightVec = new THREE.Vector3(), currentPos = new THREE.Vector3(), vrMoveDir = new THREE.Vector3();
 
   return {
     controllers,
@@ -78,102 +79,77 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     update: (delta) => {
       const session = renderer.xr.getSession();
       if (snapTurnCooldown > 0) snapTurnCooldown -= delta;
+      if (session?.renderState?.baseLayer && session.renderState.baseLayer.fixedFoveation !== 1.0) {
+        try { session.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
+      }
 
-      // Track Controller Positions & Detect Physical Punches
       controllers.forEach((ctrl, i) => {
         ctrl.getWorldPosition(currentPos);
         const dist = currentPos.distanceTo(lastPositions[i]);
-        const speed = delta > 0 ? (dist / delta) : 0;
+        const speed = delta > 0 ? dist / delta : 0;
         lastPositions[i].copy(currentPos);
-
-        if (onPunchCheck && speed > 0.4) {
-          onPunchCheck(currentPos, speed);
-        }
+        if (onPunchCheck && speed > 0.4) onPunchCheck(currentPos, speed);
       });
 
       const isMounted = getUnicornState ? getUnicornState().isMounted : false;
       const unicorn = getUnicornState ? getUnicornState().unicorn : null;
 
-      if (session && session.inputSources) {
+      if (session?.inputSources) {
         camera.getWorldDirection(forwardVec);
-        forwardVec.y = 0;
-        forwardVec.normalize();
-        rightVec.crossVectors(camera.up, forwardVec).negate().normalize();
+        forwardVec.y = 0; forwardVec.normalize();
+        rightVec.crossVectors(forwardVec, camera.up).normalize();
         vrMoveDir.set(0, 0, 0);
 
         for (const source of session.inputSources) {
-          if (!source.gamepad || !source.gamepad.axes) continue;
+          if (!source.gamepad?.axes) continue;
           const axes = source.gamepad.axes;
           const ax = axes[2] !== undefined ? axes[2] : axes[0] || 0;
           const ay = axes[3] !== undefined ? axes[3] : axes[1] || 0;
 
-          // LEFT HAND: Locomotion
           if (source.handedness === 'left') {
             if (Math.abs(ay) > 0.12) vrMoveDir.addScaledVector(forwardVec, -ay);
             if (Math.abs(ax) > 0.12) vrMoveDir.addScaledVector(rightVec, ax);
           }
-
-          // RIGHT HAND: Snap Turn & Elevation
           if (source.handedness === 'right') {
-            if (snapTurnCooldown <= 0) {
-              if (ax > 0.55) {
-                xrGroup.rotation.y -= Math.PI / 4;
-                snapTurnCooldown = 0.28;
-              } else if (ax < -0.55) {
-                xrGroup.rotation.y += Math.PI / 4;
-                snapTurnCooldown = 0.28;
-              }
+            if (snapTurnCooldown <= 0 && Math.abs(ax) > 0.55) {
+              xrGroup.rotation.y += ax > 0 ? -Math.PI / 4 : Math.PI / 4;
+              snapTurnCooldown = 0.28;
             }
-
-            if (Math.abs(ay) > 0.3) {
-              xrGroup.position.y -= ay * 5.0 * delta;
-            }
+            if (Math.abs(ay) > 0.3) xrGroup.position.y -= ay * 5.0 * delta;
           }
         }
 
         if (isMounted && unicorn) {
           const isMoving = vrMoveDir.lengthSq() > 0.001;
           if (isMoving) vrMoveDir.normalize();
-          unicorn.move(vrMoveDir, delta, camera.rotation.y);
+          unicorn.move(vrMoveDir, delta);
           unicorn.update(delta, isMoving ? 'gallop' : 'idle');
-          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y, unicorn.group.position.z);
+          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y + 0.35, unicorn.group.position.z);
         } else {
           if (vrMoveDir.lengthSq() > 0.001) {
             vrMoveDir.normalize();
             xrGroup.position.addScaledVector(vrMoveDir, 7.5 * delta);
           }
+          const groundY = getTerrainHeight(xrGroup.position.x, xrGroup.position.z);
+          if (xrGroup.position.y < groundY) xrGroup.position.y = groundY;
 
-          // Play area radius clamping (Expanded vast sanctuary)
-          const dx = xrGroup.position.x;
-          const dz = xrGroup.position.z - (-12);
-          const dist = Math.hypot(dx, dz);
-          const MAX_R = 92.0;
-          if (dist > MAX_R) {
-            xrGroup.position.x = (dx / dist) * MAX_R;
-            xrGroup.position.z = -12 + (dz / dist) * MAX_R;
+          const dist = Math.hypot(xrGroup.position.x, xrGroup.position.z + 12);
+          if (dist > 140.0) {
+            xrGroup.position.x = (xrGroup.position.x / dist) * 140.0;
+            xrGroup.position.z = -12 + ((xrGroup.position.z + 12) / dist) * 140.0;
           }
-          xrGroup.position.y = Math.max(-0.5, Math.min(25.0, xrGroup.position.y));
         }
       }
 
-      // Real-time ray hover highlighting
       controllers.forEach((controller) => {
         tempMatrix.identity().extractRotation(controller.matrixWorld);
         raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
         raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-
-        const targets = getInteractiveObjects();
-        const hits = raycaster.intersectObjects(targets, true);
-
+        const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
         const laser = controller.children[0];
-        if (laser && laser.material) {
-          if (hits.length > 0 && hits[0].distance < 30) {
-            laser.material.color.setHex(0xff0077);
-            laser.scale.z = hits[0].distance;
-          } else {
-            laser.material.color.setHex(0x00ffff);
-            laser.scale.z = 25;
-          }
+        if (laser?.material) {
+          laser.material.color.setHex(hits.length > 0 && hits[0].distance < 30 ? 0xff0077 : 0x00ffff);
+          laser.scale.z = hits.length > 0 && hits[0].distance < 30 ? hits[0].distance : 25;
         }
       });
     }

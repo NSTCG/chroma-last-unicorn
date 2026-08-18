@@ -37,6 +37,34 @@ export function setupDevStudio(game) {
       <label style="color:#ffcc33; font-weight:bold; display:block; margin-bottom:8px;">☀️ SHADOW & GI LIGHTING</label>
       
       <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Ambient Light Color:</span>
+          <input type="color" id="picker-ambient" value="#75788c" style="background:none; border:1px solid #555; border-radius:4px; height:24px; cursor:pointer;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Ambient Intensity:</span> <span id="val-ambient">1.40</span>
+        </div>
+        <input type="range" id="slider-ambient" min="0.0" max="3.0" step="0.05" value="1.40" style="width:100%;">
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Hemi Sky Color:</span>
+          <input type="color" id="picker-hemi-sky" value="#9aa4ca" style="background:none; border:1px solid #555; border-radius:4px; height:24px; cursor:pointer;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Hemi Ground Color:</span>
+          <input type="color" id="picker-hemi-gnd" value="#5a485e" style="background:none; border:1px solid #555; border-radius:4px; height:24px; cursor:pointer;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:6px;">
         <div style="display:flex; justify-content:space-between;">
           <span>Shadow GI Ambient Bounce:</span> <span id="val-gi">1.35x</span>
         </div>
@@ -230,6 +258,22 @@ export function setupDevStudio(game) {
   };
 
   // GI & Lighting
+  bindSlider('slider-ambient', 'val-ambient', '', (val) => {
+    if (game.engine?.ambientLight) game.engine.ambientLight.intensity = val;
+  });
+
+  panel.querySelector('#picker-ambient').addEventListener('input', (e) => {
+    if (game.engine?.ambientLight) game.engine.ambientLight.color.set(e.target.value);
+  });
+
+  panel.querySelector('#picker-hemi-sky').addEventListener('input', (e) => {
+    if (game.engine?.hemiLight) game.engine.hemiLight.color.set(e.target.value);
+  });
+
+  panel.querySelector('#picker-hemi-gnd').addEventListener('input', (e) => {
+    if (game.engine?.hemiLight) game.engine.hemiLight.groundColor.set(e.target.value);
+  });
+
   bindSlider('slider-gi', 'val-gi', 'x', (val) => {
     if (game.grass?.params) game.grass.params.giStrength = val;
     if (game.world?.setGIShadowStrength) game.world.setGIShadowStrength(val);
