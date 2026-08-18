@@ -3,8 +3,8 @@ export function createParticleSystem(scene, count = 1500) {
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(count * 3), col = new Float32Array(count * 3), seed = new Float32Array(count * 2);
   const rgb = [
-    [0.32, 0.88, 0.35], [0.95, 0.95, 0.9], [1, 0.6, 0.13], [1, 0.92, 0.2],
-    [0.2, 0.93, 0.47], [0, 0.83, 1], [0.93, 0.27, 1]
+    [0.96, 0.94, 0.98], [1.0, 0.62, 0.80], [1.0, 0.88, 0.35],
+    [0.42, 0.92, 0.65], [0.38, 0.82, 1.0], [0.82, 0.48, 1.0], [1.0, 0.52, 0.32]
   ];
 
   for (let i = 0; i < count; i++) {

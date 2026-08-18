@@ -4,7 +4,7 @@ function createDenseGrassTexture(THREE) {
   const canvas = document.createElement('canvas');
   canvas.width = 128; canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = '#448833';
   ctx.fillRect(0, 248, 128, 8);
 
   [[64,22,248,0],[45,17,224,-18],[83,17,228,18],[30,15,195,-30],[98,15,200,30],[16,13,165,-45],[112,13,170,45],[52,13,142,-9],[76,13,148,11]].forEach(([x, w, h, b]) => {
@@ -15,18 +15,18 @@ function createDenseGrassTexture(THREE) {
     ctx.fill();
   });
 
-  [[30, 61], [98, 56]].forEach(([fx, fy]) => {
-    ctx.fillStyle = '#fff';
-    for (let p = 0; p < 5; p++) {
-      ctx.beginPath();
-      ctx.arc(fx + Math.cos(p * 1.256) * 4.2, fy + Math.sin(p * 1.256) * 4.2, 3.2, 0, 6.28);
-      ctx.fill();
-    }
-    ctx.fillStyle = '#ffe044';
+  // Single delicate flower blossom on one blade tip (subtle and scattered)
+  const fx = 83, fy = 38;
+  ctx.fillStyle = '#ffffff';
+  for (let p = 0; p < 5; p++) {
     ctx.beginPath();
-    ctx.arc(fx, fy, 2.2, 0, 6.28);
+    ctx.arc(fx + Math.cos(p * 1.256) * 3.4, fy + Math.sin(p * 1.256) * 3.4, 2.5, 0, 6.28);
     ctx.fill();
-  });
+  }
+  ctx.fillStyle = '#ffe044';
+  ctx.beginPath();
+  ctx.arc(fx, fy, 1.8, 0, 6.28);
+  ctx.fill();
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
@@ -35,7 +35,6 @@ function createDenseGrassTexture(THREE) {
 
 function createTaperedBladeGeometry(THREE, width = 0.72, height = 1.95) {
   const hw = width * 0.5, geom = new THREE.BufferGeometry();
-  // Sunk -0.15 below origin so roots penetrate terrain firmly
   const positions = new Float32Array([
     -hw, -0.15, 0,
      hw, -0.15, 0,
@@ -91,6 +90,10 @@ export function createGrassField(scene, count = 46000) {
         float sFac=shadowOcc*(c*0.42+0.58);
         vec3 tipFinal=mix(mix(vec3(0.14,0.14,0.18),vec3(0.28,0.28,0.34),c),tipCol,uAwakened)*mix(gi,sun,sFac);
         vec3 col=mix(groundLit,tipFinal,pow(vH,0.85));
+        float isFlw=step(0.85,tex.r*tex.b);
+        vec3 flwHue=vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(1.0)*(vWP.x*0.08+vWP.z*0.08)+vec3(0.0,0.33,0.67)));
+        vec3 flwCol=mix(vec3(0.96,0.94,0.98),flwHue*1.25,uAwakened*0.7);
+        col=mix(col,flwCol,isFlw*0.88);
         float dist=length(vVP);
         col=mix(col,groundLit,smoothstep(25.0,95.0,dist)*0.96);
         vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);
