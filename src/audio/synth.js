@@ -48,6 +48,25 @@ class AudioEngine {
     [1, 1.5, 2].forEach((m, i) => this.tone('sine', bf * m, 1.6, 0.18 / (i + 1)));
   }
 
+  playResonate() {
+    this.tone('triangle', 115, 0.35, 0.22, 135);
+  }
+
+  playRingtone() {
+    this.tone('sine', 440, 1.1, 0.14);
+    this.tone('sine', 480, 1.1, 0.14);
+  }
+
+  playMumble(p = 380) {
+    this.tone('triangle', p + (Math.random() - 0.5) * 50, 0.08, 0.11, p * 0.9);
+  }
+
+  playPeacefulChords() {
+    [329.6, 392, 493.8, 587.3].forEach((f, i) => {
+      setTimeout(() => this.tone('sine', f, 3.2, 0.08), i * 160);
+    });
+  }
+
   playPluck(freq, dur, gain) {
     this.tone('triangle', freq, dur, gain, freq * 0.5);
   }

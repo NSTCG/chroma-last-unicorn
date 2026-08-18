@@ -6,7 +6,7 @@ export const getHit = (hits) => {
   return h?.userData?.data ? h : null;
 };
 
-export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState, renderer) {
+export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState, renderer, vrHud) {
   const THREE = window.THREE;
   let isLocked = false, isMouseDown = false, prevMouseX = 0, prevMouseY = 0;
   const keys = {}, moveSpeed = 8.5;
@@ -54,6 +54,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   window.addEventListener('keydown', (e) => {
     if (renderer?.xr?.isPresenting) return;
     keys[e.code] = true;
+    if (e.code === 'KeyX' && vrHud?.triggerCallAction) vrHud.triggerCallAction();
     if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') tryInteract();
   });
   window.addEventListener('keyup', (e) => { keys[e.code] = false; });

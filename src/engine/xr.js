@@ -1,7 +1,7 @@
 import { getTerrainHeight } from '../models/world.js';
 import { getHit } from './controls.js';
 
-export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState) {
+export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState, vrHud) {
   const THREE = window.THREE;
   renderer.xr.enabled = true;
   try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
@@ -23,6 +23,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
 
     controller.addEventListener('selectstart', () => {
       if (onActZeroTrigger) onActZeroTrigger();
+      if (vrHud?.triggerCallAction) vrHud.triggerCallAction();
       tempMatrix.identity().extractRotation(controller.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
       raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
@@ -39,9 +40,8 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     if (s) {
       if (s.updateTargetFrameRate) {
         try {
-          const rates = s.supportedFrameRates ? Array.from(s.supportedFrameRates) : [];
-          let target = rates.length ? rates.reduce((p, c) => Math.abs(c - 75) < Math.abs(p - 75) ? c : p, rates[0]) : 75;
-          await s.updateTargetFrameRate(target);
+          const r = s.supportedFrameRates ? [...s.supportedFrameRates] : [];
+          await s.updateTargetFrameRate(r.length ? r.reduce((p, c) => Math.abs(c - 75) < Math.abs(p - 75) ? c : p, r[0]) : 75);
         } catch (_) {}
       }
       if (s.renderState?.baseLayer) {
@@ -61,7 +61,6 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       xrGroup.position.y -= 1.6;
       camera.position.set(0, 0, 0);
       camera.quaternion.identity();
-      camera.updateMatrix();
       camera.updateMatrixWorld(true);
       await renderer.xr.setSession(session);
       try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
@@ -99,6 +98,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
         vrMoveDir.set(0, 0, 0);
 
         for (const source of session.inputSources) {
+          if (source.gamepad?.buttons?.some(b => b?.pressed) && vrHud?.triggerCallAction) vrHud.triggerCallAction();
           if (!source.gamepad?.axes) continue;
           const axes = source.gamepad.axes;
           const ax = axes[2] !== undefined ? axes[2] : axes[0] || 0;

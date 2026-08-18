@@ -43,9 +43,27 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
     beacon.position.copy(coreMesh.position);
     shardsGroup.add(beacon);
 
-    coreMesh.userData = { index, data, initialY: py };
-    shards.push({ coreMesh, shellMesh, orbLight, beacon, data, collected: false });
+    coreMesh.userData = shellMesh.userData = { index, data, initialY: py };
+    shards.push({ coreMesh, shellMesh, orbLight, beacon, data, collected: false, unlocked: false, vibrate: 0 });
   });
+
+  const interactShard = (shard) => {
+    if (!shard || shard.collected) return null;
+    if (!shard.unlocked) {
+      shard.vibrate = 0.45;
+      audio.playResonate();
+      if (shard.data.index === 2) {
+        if (vrHud?.startCallTask) vrHud.startCallTask(shard, () => {
+          shard.unlocked = true;
+          shard.shellMesh.visible = false;
+        });
+      } else {
+        if (vrHud) vrHud.show(shard.data.name + ' [LOCKED]', shard.data.action, 'Prototype locked in Demo');
+      }
+      return null;
+    }
+    return triggerCollect(shard);
+  };
 
   const triggerCollect = (shard) => {
     if (!shard || shard.collected) return null;
@@ -61,11 +79,11 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
 
   return {
     shards,
-    getInteractiveMeshes: () => shards.filter(s => !s.collected).map(s => s.coreMesh),
-    collect: (mesh) => mesh?.userData ? triggerCollect(shards[mesh.userData.index]) : null,
+    getInteractiveMeshes: () => shards.filter(s => !s.collected).map(s => s.unlocked ? s.coreMesh : s.shellMesh),
+    collect: (mesh) => mesh?.userData ? interactShard(shards[mesh.userData.index]) : null,
     checkVRPunch: (pos) => {
       shards.forEach(s => {
-        if (!s.collected && pos.distanceTo(s.coreMesh.position) < 1.6) triggerCollect(s);
+        if (!s.collected && pos.distanceTo(s.coreMesh.position) < 1.8) interactShard(s);
       });
     },
     update: (delta) => {
@@ -79,8 +97,19 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
           s.coreMesh.position.y = s.coreMesh.userData.initialY + Math.sin(t + s.coreMesh.userData.index) * 0.4;
           s.shellMesh.position.y = s.coreMesh.position.y;
           s.orbLight.position.y = s.coreMesh.position.y;
+
+          if (s.vibrate > 0) {
+            s.vibrate -= delta;
+            const vx = (Math.random() - 0.5) * 0.14, vz = (Math.random() - 0.5) * 0.14;
+            s.coreMesh.position.x = s.data.pos[0] + vx; s.shellMesh.position.x = s.data.pos[0] + vx;
+            s.coreMesh.position.z = s.data.pos[2] + vz; s.shellMesh.position.z = s.data.pos[2] + vz;
+          } else {
+            s.coreMesh.position.x = s.shellMesh.position.x = s.data.pos[0];
+            s.coreMesh.position.z = s.shellMesh.position.z = s.data.pos[2];
+          }
         }
       });
     }
   };
 }
+

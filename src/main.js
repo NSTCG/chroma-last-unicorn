@@ -74,14 +74,15 @@ class ChromaGame {
     this.pcControls = setupPCControls(
       this.camera, this.renderer.domElement, getInteractive, onSelect,
       () => ({ isMounted: this.isMounted, unicorn: this.unicorn }),
-      this.renderer
+      this.renderer, this.vrHud
     );
 
     this.xr = setupXR(
       this.renderer, this.scene, this.camera, getInteractive, onSelect,
       (pos, speed) => this.shards.checkVRPunch(pos, speed),
       () => { if (this.narrative.act === 0) this.narrative.triggerSlide(); },
-      () => ({ isMounted: this.isMounted, unicorn: this.unicorn })
+      () => ({ isMounted: this.isMounted, unicorn: this.unicorn }),
+      this.vrHud
     );
 
     this.initUI();
