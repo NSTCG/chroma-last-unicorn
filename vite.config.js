@@ -38,6 +38,14 @@ export default defineConfig(({ mode }) => {
           drop_debugger: !isDev,
           passes: 3,
           pure_getters: true,
+          unsafe: true,
+          unsafe_arrows: true,
+          unsafe_comps: true,
+          unsafe_math: true,
+          unsafe_methods: true,
+          hoist_funs: true,
+          hoist_vars: true,
+          reduce_vars: true,
           booleans_as_integers: false
         },
         mangle: {
