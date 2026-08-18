@@ -31,46 +31,22 @@ export function createUnicorn(scene) {
   const neckHeadPivot = new THREE.Group();
   body.add(neckHeadPivot);
 
-  const buildLoft = (rings, segs, tip) => {
-    const verts = [], inds = [];
-    rings.forEach(([rz, ry, rx, rry]) => {
-      for (let i = 0; i < segs; i++) {
-        const a = (i / segs) * Math.PI * 2;
-        verts.push(Math.cos(a) * rx, ry + Math.sin(a) * (rry || rx), rz);
-      }
-    });
-    const tipIdx = verts.length / 3;
-    if (tip) verts.push(...tip);
-    for (let r = 0; r < rings.length - 1; r++) {
-      const r0 = r * segs, r1 = (r + 1) * segs;
-      for (let i = 0; i < segs; i++) inds.push(r0 + i, r0 + (i + 1) % segs, r1 + (i + 1) % segs, r0 + i, r1 + (i + 1) % segs, r1 + i);
-    }
-    if (tip) {
-      const lr = (rings.length - 1) * segs;
-      for (let i = 0; i < segs; i++) inds.push(lr + i, lr + (i + 1) % segs, tipIdx);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
-    geo.setIndex(inds);
-    geo.computeVertexNormals();
-    return geo;
-  };
-
-  const neckGeo = buildLoft([[0.44,1.3,0.22,0.28],[0.62,1.54,0.18,0.23],[0.82,1.76,0.14,0.18],[1.02,1.94,0.12,0.15],[1.2,1.94,0.13,0.14],[1.38,1.78,0.09,0.1],[1.56,1.66,0.06,0.07]], 8, [0, 1.64, 1.62]);
-  const maneGeo = buildLoft([[0.96,2.02,0.024,0.038],[0.82,1.92,0.035,0.065],[0.66,1.76,0.042,0.088],[0.48,1.6,0.045,0.092],[0.32,1.44,0.024,0.038]], 6);
-  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat), new THREE.Mesh(maneGeo, rainbowMat));
+  const neckGeo = new THREE.CylinderGeometry(0.12, 0.26, 1.1, 7); neckGeo.rotateX(-0.68); neckGeo.translate(0, 1.72, 0.72);
+  const headGeo = new THREE.SphereGeometry(0.16, 7, 7); headGeo.scale(0.85, 1.1, 1.4); headGeo.translate(0, 2.05, 1.15);
+  const maneGeo = new THREE.BoxGeometry(0.06, 0.9, 0.45); maneGeo.rotateX(-0.68); maneGeo.translate(0, 1.82, 0.62);
+  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat), new THREE.Mesh(headGeo, pearlMat), new THREE.Mesh(maneGeo, rainbowMat));
 
   const earGeo = new THREE.ConeGeometry(0.04, 0.20, 5);
-  const earL = new THREE.Mesh(earGeo, pearlMat); earL.position.set(0.075, 2.08, 1.12); earL.rotation.set(-0.25, 0, -0.15);
-  const earR = new THREE.Mesh(earGeo, pearlMat); earR.position.set(-0.075, 2.08, 1.12); earR.rotation.set(-0.25, 0, 0.15);
+  const earL = new THREE.Mesh(earGeo, pearlMat); earL.position.set(0.075, 2.18, 1.12); earL.rotation.set(-0.25, 0, -0.15);
+  const earR = new THREE.Mesh(earGeo, pearlMat); earR.position.set(-0.075, 2.18, 1.12); earR.rotation.set(-0.25, 0, 0.15);
   const hornGeo = new THREE.ConeGeometry(0.026, 0.42, 6); hornGeo.rotateX(0.72); hornGeo.translate(0, 0.20, 0.12);
-  const horn = new THREE.Mesh(hornGeo, goldMat); horn.position.set(0, 1.96, 1.22);
+  const horn = new THREE.Mesh(hornGeo, goldMat); horn.position.set(0, 2.05, 1.25);
   neckHeadPivot.add(earL, earR, horn);
 
   const tailPivot = new THREE.Group();
   tailPivot.position.set(0, 1.24, -0.55);
   body.add(tailPivot);
-  const tailGeo = buildLoft([[0,0,0.06],[-0.18,0.04,0.09],[-0.36,-0.25,0.11],[-0.44,-0.52,0.08],[-0.4,-0.78,0.02]], 6);
+  const tailGeo = new THREE.ConeGeometry(0.11, 0.85, 6); tailGeo.rotateX(0.35); tailGeo.translate(0, -0.42, -0.2);
   tailPivot.add(new THREE.Mesh(tailGeo, rainbowMat));
 
   const uGeo = new THREE.CylinderGeometry(0.1, 0.065, 0.55, 6); uGeo.translate(0, -0.275, 0);
