@@ -2,50 +2,29 @@ import { getTerrainHeight } from './world.js';
 
 function createDenseGrassTexture(THREE) {
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 256;
+  canvas.width = 128; canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 128, 256);
-
-  // Solid root row to prevent any bottom alpha seam/black break line
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#fff';
   ctx.fillRect(0, 248, 128, 8);
 
-  const blades = [
-    [64, 22, 248, 0],
-    [45, 17, 224, -18],
-    [83, 17, 228, 18],
-    [30, 15, 195, -30],
-    [98, 15, 200, 30],
-    [16, 13, 165, -45],
-    [112, 13, 170, 45],
-    [52, 13, 142, -9],
-    [76, 13, 148, 11]
-  ];
-
-  ctx.fillStyle = '#ffffff';
-  blades.forEach(([x, w, h, bend]) => {
+  [[64,22,248,0],[45,17,224,-18],[83,17,228,18],[30,15,195,-30],[98,15,200,30],[16,13,165,-45],[112,13,170,45],[52,13,142,-9],[76,13,148,11]].forEach(([x, w, h, b]) => {
     ctx.beginPath();
     ctx.moveTo(x - w * 0.5, 256);
-    ctx.quadraticCurveTo(x + bend * 0.4, 256 - h * 0.55, x + bend, 256 - h);
-    ctx.quadraticCurveTo(x + bend * 0.6, 256 - h * 0.55, x + w * 0.5, 256);
-    ctx.closePath();
+    ctx.quadraticCurveTo(x + b * 0.4, 256 - h * 0.55, x + b, 256 - h);
+    ctx.quadraticCurveTo(x + b * 0.6, 256 - h * 0.55, x + w * 0.5, 256);
     ctx.fill();
   });
 
-  // White daisy flowers on select blade tips
-  [[30, 256 - 195], [98, 256 - 200], [64, 256 - 248]].forEach(([fx, fy]) => {
-    ctx.fillStyle = '#ffffff';
+  [[30, 61], [98, 56]].forEach(([fx, fy]) => {
+    ctx.fillStyle = '#fff';
     for (let p = 0; p < 5; p++) {
-      const pa = (p / 5) * 6.283;
       ctx.beginPath();
-      ctx.arc(fx + Math.cos(pa) * 4.2, fy + Math.sin(pa) * 4.2, 3.2, 0, 6.283);
+      ctx.arc(fx + Math.cos(p * 1.256) * 4.2, fy + Math.sin(p * 1.256) * 4.2, 3.2, 0, 6.28);
       ctx.fill();
     }
-    // Gold flower center
     ctx.fillStyle = '#ffe044';
     ctx.beginPath();
-    ctx.arc(fx, fy, 2.2, 0, 6.283);
+    ctx.arc(fx, fy, 2.2, 0, 6.28);
     ctx.fill();
   });
 
