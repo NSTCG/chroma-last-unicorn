@@ -19,23 +19,12 @@ export function createWorld(scene) {
     uTime: { value: 0 },
     uAwakened: { value: 0 }
   };
-  const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x12141a, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, transparent: false, depthWrite: true
+  const groundMat = new THREE.ShaderMaterial({
+    uniforms: groundUniforms,
+    vertexShader: `varying vec3 vWP;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader: `uniform float uTime,uAwakened;varying vec3 vWP;float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);return smoothstep(0.2,0.85,(sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5)*0.65+(sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5)*0.35);}void main(){float c=cloudN(vWP.xz,uTime);vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);vec3 groundColor=gF*mix(gi,sun,c*0.42+0.58);vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);gl_FragColor=vec4(mix(groundColor,fogCol,smoothstep(32.0,160.0,length(vWP-cameraPosition))*0.98),1.0);}`,
+    side: THREE.DoubleSide
   });
-  groundMat.uniforms = groundUniforms;
-
-  groundMat.onBeforeCompile = (s) => {
-    Object.assign(s.uniforms, groundUniforms);
-    s.vertexShader = `varying vec3 vWPos;\n` + s.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    s.fragmentShader = `uniform float uTime,uAwakened;varying vec3 vWPos;float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);float n1=sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5,n2=sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5;return smoothstep(0.2,0.85,n1*0.65+n2*0.35);}\n` + s.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
-      float c=cloudN(vWPos.xz,uTime);
-      vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);
-      vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);
-      vec3 groundColor=gF*mix(gi,sun,c*0.42+0.58);
-      vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);
-      gl_FragColor.rgb=mix(groundColor,fogCol,smoothstep(32.0,160.0,length(vWPos-cameraPosition))*0.98);
-      gl_FragColor.a=1.0;`);
-  };
 
   const groundGeo = new THREE.PlaneGeometry(550, 550, 48, 48);
   groundGeo.rotateX(-Math.PI / 2);

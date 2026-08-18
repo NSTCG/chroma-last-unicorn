@@ -2,30 +2,17 @@ export function createPrismaticMaterial(opt = {}) {
   const THREE = window.THREE;
   const uniforms = {
     uTime: { value: 0 },
-    uColorAwakened: { value: opt.awakened || 0 },
-    uBaseColor: { value: new THREE.Color(opt.baseColor !== undefined ? opt.baseColor : 0xffffff) },
-    uIridescence: { value: opt.iridescence !== undefined ? opt.iridescence : 1.2 },
-    uDispersion: { value: opt.dispersion !== undefined ? opt.dispersion : 2.2 },
-    uGlitter: { value: opt.glitter !== undefined ? opt.glitter : 1.0 },
-    uEmissive: { value: opt.emissive || 0 },
-    uFadeIntensity: { value: opt.fadeIntensity || 0.65 }
+    uAwakened: { value: opt.awakened || 0 },
+    uBaseColor: { value: new THREE.Color(opt.baseColor !== undefined ? opt.baseColor : 0x505460) }
   };
-
-  const mat = new THREE.MeshStandardMaterial({
-    color: opt.baseColor !== undefined ? opt.baseColor : 0x505460,
-    roughness: 0.65, metalness: 0.15, side: THREE.DoubleSide, transparent: true, depthWrite: true
+  const mat = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: `varying vec3 vWP,vN,vV;void main(){vN=normalize(normalMatrix*normal);vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `uniform float uTime,uAwakened;uniform vec3 uBaseColor;varying vec3 vWP,vN,vV;void main(){vec3 N=normalize(vN),V=normalize(vV),L=normalize(vec3(0.5,1.0,0.4));float d=max(dot(N,L),0.0)*0.65+0.35,fr=pow(1.0-max(dot(N,V),0.0),2.2);vec3 irid=(vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(1.0)*((vWP.y*0.25+vWP.x*0.15)*2.2+uTime*0.45)+vec3(0.0,0.33,0.67))))*fr;float spk=pow(fract(sin(dot(floor(vWP*22.0),vec3(12.9898,78.233,45.164)))*43758.5453),20.0)*10.0;vec3 col=mix(vec3(dot(uBaseColor,vec3(0.3,0.59,0.11))*0.85)*d,uBaseColor*d+irid+spk*uBaseColor,uAwakened);gl_FragColor=vec4(col,1.0);}`,
+    side: THREE.DoubleSide
   });
-  mat.uniforms = uniforms;
-
-  mat.onBeforeCompile = (s) => {
-    Object.assign(s.uniforms, uniforms);
-    s.vertexShader = `varying vec3 vWPos;\n` + s.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    s.fragmentShader = `uniform float uTime,uColorAwakened,uIridescence,uDispersion,uGlitter,uEmissive,uFadeIntensity;uniform vec3 uBaseColor;varying vec3 vWPos;\n` + s.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
-      vec3 irid=(vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(1.0)*((vWPos.y*0.25+vWPos.x*0.15)*uDispersion+uTime*0.45)+vec3(0.0,0.33,0.67))))*(uIridescence*0.35+uEmissive);
-      float spk=pow(fract(sin(dot(floor(vWPos*22.0),vec3(12.9898,78.233,45.164)))*43758.5453),20.0)*uGlitter*10.0;
-      gl_FragColor.rgb=mix(vec3(dot(gl_FragColor.rgb,vec3(0.299,0.587,0.114))*0.85),gl_FragColor.rgb+irid+spk*uBaseColor,uColorAwakened);
-      gl_FragColor.a=1.0-smoothstep(70.0,200.0,length(vWPos-cameraPosition))*uFadeIntensity;`);
-  };
-
+  mat.setAwakened = (val) => { uniforms.uAwakened.value = val; };
+  mat.update = (delta) => { uniforms.uTime.value += delta; };
   return mat;
 }
+
