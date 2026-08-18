@@ -17,6 +17,7 @@ export function createUnicorn(scene) {
 
   const pearlMat = makeMat(0), goldMat = makeMat(1), rainbowMat = makeMat(2);
   const body = new THREE.Group();
+  body.rotation.y = Math.PI; // Face standard Three.js -Z forward
   group.add(body);
 
   const chestGeo = new THREE.SphereGeometry(0.38, 8, 8); chestGeo.scale(0.9, 1.15, 1.15);
@@ -98,7 +99,7 @@ export function createUnicorn(scene) {
     move: (moveVector, delta) => {
       if (moveVector.lengthSq() > 0.001) {
         group.position.addScaledVector(moveVector, 12.5 * delta);
-        const targetAngle = Math.atan2(moveVector.x, moveVector.z);
+        const targetAngle = Math.atan2(-moveVector.x, -moveVector.z);
         let diff = targetAngle - currentHeading;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;

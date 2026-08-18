@@ -67,17 +67,19 @@ export function createGrassField(scene, count = 46000) {
         vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);
         vec3 groundLit=gF*mix(gi,sun,c*0.42+0.58);
         vec3 sc=vShadowCoord.xyz/vShadowCoord.w;float shadowOcc=1.0;
-        if(sc.x>=0.0&&sc.x<=1.0&&sc.y>=0.0&&sc.y<=1.0&&sc.z<=1.0){
-          if(sc.z>unpackRGBAToDepth(texture2D(directionalShadowMap[0],sc.xy))+0.0006) shadowOcc=0.0;
-        }
         float bVar=sin(vWP.x*0.18+1.2)*cos(vWP.z*0.18+0.8)*0.5+0.5;
-        vec3 tipCol=mix(mix(vec3(0.072,0.396,0.126),vec3(0.196,0.672,0.266),bVar),mix(vec3(0.238,0.816,0.323),vec3(0.47,1.3,0.514),bVar),c);
-        vec3 col=mix(groundLit,mix(mix(vec3(0.14,0.14,0.18),vec3(0.28,0.28,0.34),c),tipCol,uAwakened)*mix(gi,sun,shadowOcc*(c*0.42+0.58)),pow(vH,0.85));
-        vec3 flwCol=mix(vec3(0.96,0.94,0.98),(vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(vWP.x*0.08+vWP.z*0.08)+vec3(0,0.33,0.67))))*1.25,uAwakened*0.7);
-        col=mix(col,flwCol,step(0.85,tex.r*tex.b)*0.88);
+        vec3 tipAwakened=mix(gA*1.15,gA*1.42+vec3(0.02,0.04,0.0),bVar);
+        vec3 tipGrey=mix(gG*1.1,gG*1.32,bVar);
+        vec3 tipFinal=mix(tipGrey,tipAwakened,uAwakened)*mix(gi,sun,shadowOcc*(c*0.42+0.58));
+        vec3 col=mix(groundLit,tipFinal,pow(vH,0.85));
+
         float dist=length(vVP);
-        col=mix(col,groundLit,smoothstep(35.0,140.0,dist)*0.96);
-        float alpha=1.0-smoothstep(110.0,220.0,dist)*0.95;
+        float flwFade=1.0-smoothstep(12.0,38.0,dist);
+        vec3 flwCol=mix(vec3(0.96,0.94,0.98),(vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(vWP.x*0.08+vWP.z*0.08)+vec3(0,0.33,0.67))))*1.15,uAwakened*0.7);
+        col=mix(col,flwCol,step(0.85,tex.r*tex.b)*0.88*flwFade);
+
+        col=mix(col,groundLit,smoothstep(18.0,65.0,dist));
+        float alpha=1.0-smoothstep(110.0,240.0,dist)*0.95;
         gl_FragColor=vec4(col,alpha);
       }`,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.shadowmap, uniforms]),
