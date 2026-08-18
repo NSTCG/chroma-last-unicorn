@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
 import { Packer } from 'roadroller';
+import { minify } from 'terser';
 
 const MAX_BYTES = 13312; // 13KB limit for JS13k
 
@@ -41,10 +42,31 @@ async function runBuildPipeline() {
     console.log(`\x1b[34mRunning Roadroller quick optimization on JavaScript (${Buffer.byteLength(scriptFound.code, 'utf-8').toLocaleString()} bytes)...\x1b[0m`);
 
     try {
+      const minified = await minify(scriptFound.code, {
+        ecma: 2020,
+        module: true,
+        toplevel: true,
+        compress: {
+          passes: 5,
+          unsafe: true,
+          unsafe_arrows: true,
+          unsafe_comps: true,
+          unsafe_math: true,
+          unsafe_methods: true,
+          hoist_funs: true,
+          hoist_vars: true,
+          reduce_vars: true,
+          drop_console: true,
+          pure_getters: true
+        },
+        mangle: { toplevel: true }
+      });
+      const codeToPack = minified.code || scriptFound.code;
+
       const packer = new Packer(
         [
           {
-            data: scriptFound.code,
+            data: codeToPack,
             type: 'js',
             action: 'eval'
           }

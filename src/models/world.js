@@ -67,8 +67,7 @@ export function createWorld(scene) {
   ].map(([x, y, z, color]) => {
     const g = new THREE.Group();
     g.position.set(x, y, z);
-    const m = new THREE.Mesh(islGeo, new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.1 }));
-    m.castShadow = m.receiveShadow = true;
+    const m = new THREE.Mesh(islGeo, new THREE.MeshBasicMaterial({ color }));
     g.add(m);
     worldGroup.add(g);
     return { group: g, basePos: new THREE.Vector3(x, y, z), seed: Math.random() * 100 };

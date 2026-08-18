@@ -28,9 +28,9 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics)
     const py = getTerrainHeight(data.pos[0], data.pos[2]) + 4.5;
     coreMesh.position.set(data.pos[0], py, data.pos[2]);
 
-    const shellMesh = new THREE.Mesh(shellGeo, new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.1, transparent: true, opacity: 0.55, wireframe: true }));
+    const shellMesh = new THREE.Mesh(shellGeo, new THREE.MeshBasicMaterial({ color: data.color, wireframe: true, transparent: true, opacity: 0.55 }));
     shellMesh.position.copy(coreMesh.position);
-    coreMesh.castShadow = shellMesh.castShadow = true;
+    coreMesh.castShadow = true;
     shardsGroup.add(shellMesh, coreMesh);
 
     const orbLight = new THREE.PointLight(data.color, 2.2, 22);
