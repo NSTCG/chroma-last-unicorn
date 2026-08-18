@@ -51,7 +51,7 @@ class ChromaGame {
     this.camera = this.engine.camera;
     this.renderer = this.engine.renderer;
 
-    this.vrHud = createVRHUD();
+    this.vrHud = createVRHUD(this.scene);
     this.sky = createRainbowSky(this.scene);
     this.particles = createParticleSystem(this.scene);
     this.world = createWorld(this.scene);
@@ -145,7 +145,7 @@ class ChromaGame {
       if (!this.isMounted) this.unicorn.update(delta, this.unicornState);
       this.shards.update(delta);
       this.narrative.update(delta);
-      this.vrHud.update(delta);
+      this.vrHud.update(delta, this.camera);
       this.pcControls.update(delta);
       this.xr.update(delta);
       this.renderer.render(this.scene, this.camera);
