@@ -95,8 +95,14 @@ class ChromaGame {
     if (this.isMounted) {
       this.vrHud.show('🦄 MOUNTED UNICORN', 'WASD to ride, Click to dismount', '', 4000);
     } else {
-      this.camera.position.x = this.unicorn.group.position.x - 1.8;
-      this.camera.position.z = this.unicorn.group.position.z + 1.2;
+      const ux = this.unicorn.group.position.x - 1.8;
+      const uz = this.unicorn.group.position.z + 1.2;
+      if (this.renderer.xr.isPresenting) {
+        this.xr.xrGroup.position.set(ux, this.xr.xrGroup.position.y, uz);
+      } else {
+        this.camera.position.x = ux;
+        this.camera.position.z = uz;
+      }
       this.unicorn.update(0, 'idle');
     }
   }

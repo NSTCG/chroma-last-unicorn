@@ -38,6 +38,12 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       const session = await navigator.xr.requestSession('immersive-vr', {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       });
+      // Transfer camera world position to xrGroup and reset camera local transform
+      // so WebXR stereo eye cameras render from the correct origin
+      xrGroup.position.copy(camera.position);
+      xrGroup.position.y -= 1.6; // account for headset standing height
+      camera.position.set(0, 0, 0);
+      camera.rotation.set(0, 0, 0);
       await renderer.xr.setSession(session);
     } catch (err) {
       console.error(err);
