@@ -45,7 +45,7 @@ export class NarrativeManager {
     if (this.isSliding || this.act !== 0) return;
     this.isSliding = true;
     this.slideProgress = 0;
-    audio.playPluck(520, 0.4, 0.6);
+    audio.tone('sine', 480, 0.3, 0.08);
     if (this.game.vrHud) this.game.vrHud.show('HOLD ON!', 'Wheeeeeee!');
   }
 
@@ -56,7 +56,7 @@ export class NarrativeManager {
     const u = Math.max(0, 1.0 - this.slideProgress);
     this._moveCamera(this.getSlidePoint(u), this.getSlidePoint(Math.max(0, u - 0.04)));
     this.game.setAwakened(Math.pow(u, 1.2));
-    if (Math.random() < 0.25) audio.playChime(Math.floor(u * 7));
+    if (Math.random() < 0.12) audio.tone('sine', 260 + u * 320, 0.4, 0.05);
 
     if (this.slideProgress >= 1.0) {
       this.isSliding = false;

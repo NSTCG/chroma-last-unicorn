@@ -90,7 +90,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
           moveDir.normalize();
           hoofTimer += delta;
           if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
-          const targetYaw = unicorn.group.rotation.y;
+          const targetYaw = unicorn.group.rotation.y - Math.PI;
           let diff = targetYaw - euler.y;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;

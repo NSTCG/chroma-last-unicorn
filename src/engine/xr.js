@@ -110,7 +110,10 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
         vrMoveDir.set(0, 0, 0);
 
         for (const source of session.inputSources) {
-          if (source.gamepad?.buttons?.some(b => b?.pressed) && vrHud?.triggerCallAction) vrHud.triggerCallAction();
+          const btnX = !!(source.gamepad?.buttons?.[4]?.pressed || source.gamepad?.buttons?.[5]?.pressed || source.gamepad?.buttons?.[0]?.pressed);
+          if (btnX && !source._wasBtn && vrHud?.triggerCallAction) vrHud.triggerCallAction();
+          source._wasBtn = btnX;
+
           if (!source.gamepad?.axes) continue;
           const axes = source.gamepad.axes;
           const ax = axes[2] !== undefined ? axes[2] : axes[0] || 0;
@@ -135,7 +138,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
             vrMoveDir.normalize();
             hoofTimer += delta;
             if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
-            const targetYaw = unicorn.group.rotation.y;
+            const targetYaw = unicorn.group.rotation.y - Math.PI;
             let diff = targetYaw - xrGroup.rotation.y;
             while (diff < -Math.PI) diff += Math.PI * 2;
             while (diff > Math.PI) diff -= Math.PI * 2;
