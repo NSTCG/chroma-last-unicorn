@@ -1,4 +1,4 @@
-1,call a friend onn block phone with subtitle 
+1.call a friend onn block phone with subtitle 
 
 solve a puzzle  cube image 
 
