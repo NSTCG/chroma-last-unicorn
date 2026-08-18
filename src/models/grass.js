@@ -73,9 +73,9 @@ export function createGrassField(scene, count = 46000) {
         vec3 col=mix(groundLit,mix(mix(vec3(0.14,0.14,0.18),vec3(0.28,0.28,0.34),c),tipCol,uAwakened)*mix(gi,sun,shadowOcc*(c*0.42+0.58)),pow(vH,0.85));
         vec3 flwCol=mix(vec3(0.96,0.94,0.98),(vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(vWP.x*0.08+vWP.z*0.08)+vec3(0,0.33,0.67))))*1.25,uAwakened*0.7);
         col=mix(col,flwCol,step(0.85,tex.r*tex.b)*0.88);
-        float dist=length(vVP);
-        col=mix(col,groundLit,smoothstep(25.0,95.0,dist)*0.96);
-        gl_FragColor=vec4(mix(col,mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened),smoothstep(32.0,160.0,dist)*0.98),1.0);
+        vec3 skyHorizon=mix(vec3(0.24,0.18,0.28),vec3(0.92,0.52,0.64),uAwakened);
+        col=mix(col,skyHorizon,smoothstep(20.0,160.0,dist)*0.95);
+        gl_FragColor=vec4(col,1.0);
       }`,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.shadowmap, uniforms]),
     side: THREE.DoubleSide, transparent: false, depthWrite: true

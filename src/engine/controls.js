@@ -88,17 +88,20 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
         const isMoving = moveDir.lengthSq() > 0.001;
         if (isMoving) {
           moveDir.normalize();
-          if (!wasMountedMove) audio.playUnicornJolt();
           hoofTimer += delta;
           if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
+          const targetYaw = unicorn.group.rotation.y;
+          let diff = targetYaw - euler.y;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          euler.y += diff * Math.min(1.0, delta * 3.5);
+          camera.quaternion.setFromEuler(euler);
         }
-        wasMountedMove = isMoving;
         unicorn.move(moveDir, delta);
         unicorn.update(delta, isMoving ? 'gallop' : 'idle');
         const uPos = unicorn.group.position;
         camera.position.set(uPos.x, uPos.y + 1.85, uPos.z);
       } else {
-        wasMountedMove = false;
         if (moveDir.lengthSq() > 0) {
           moveDir.normalize();
           camera.position.addScaledVector(moveDir, moveSpeed * delta);

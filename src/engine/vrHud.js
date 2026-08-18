@@ -81,16 +81,34 @@ export function createVRHUD(scene, camera) {
       if (pulseHaptics) pulseHaptics('right', 0.45, 80);
     },
     startCallTask: (shard, onComplete) => {
-      callState = 'ready';
+      callState = 'offer';
       onCallComplete = onComplete;
-      hud.show('📞 CALL A FRIEND', 'Press [X] to call Maya...', 'Warmth reconnects...');
+      hud.show('📞 MISSION: WARMTH', 'Maya is waiting...', 'Press [X] to Accept');
     },
     triggerCallAction: () => {
-      if (callState === 'ready') {
+      if (pulseHaptics) pulseHaptics('right', 0.6, 90);
+      if (callState === 'offer') {
+        callState = 'accepted';
+        hud.show('📞 READY TO CALL', 'Reconnect with Maya...', 'Press [X] to Dial');
+      } else if (callState === 'accepted') {
         callState = 'ringing';
         callTimer = 0;
         audio.playRingtone();
         hud.show('DIALING MAYA...', 'Ring... Ring... 📞', 'Connecting...');
+      } else if (callState === 'talking_0') {
+        callState = 'talking_1';
+        audio.playMumble(390);
+        hud.show('📞 MAYA ON CALL', dialogueLines[1], 'Press [X] to Continue');
+      } else if (callState === 'talking_1') {
+        callState = 'talking_2';
+        audio.playMumble(420);
+        hud.show('📞 MAYA ON CALL', dialogueLines[2], 'Press [X] to Shatter Shell');
+      } else if (callState === 'talking_2') {
+        callState = 'done';
+        if (pulseHaptics) pulseHaptics('both', 0.9, 250);
+        audio.playPluck(880, 0.6, 0.3);
+        if (onCallComplete) onCallComplete();
+        hud.show('✨ SHELL SHATTERED!', 'Warmth reconnected.', 'Punch / Click to collect!');
       }
     },
     update: (delta, cam, isVR, rightCtrl) => {
@@ -108,28 +126,10 @@ export function createVRHUD(scene, camera) {
       if (callState === 'ringing') {
         callTimer += delta;
         if (callTimer > 2.6) {
-          callState = 'talking';
-          callTimer = 0;
-          callLineIndex = 0;
+          callState = 'talking_0';
           audio.playPeacefulChords();
           audio.playMumble(380);
-          hud.show('📞 CALL CONNECTED', dialogueLines[0], 'Listening to Maya...');
-        }
-      } else if (callState === 'talking') {
-        callTimer += delta;
-        if (isTyping && Math.random() < 0.18) audio.playMumble(360 + callLineIndex * 25);
-        if (callTimer > 4.2) {
-          callTimer = 0;
-          callLineIndex++;
-          if (callLineIndex < dialogueLines.length) {
-            audio.playMumble(390 + callLineIndex * 30);
-            hud.show('📞 CALL CONNECTED', dialogueLines[callLineIndex], 'Listening to Maya...');
-          } else {
-            callState = 'done';
-            audio.playPluck(880, 0.6, 0.3);
-            if (onCallComplete) onCallComplete();
-            hud.show('✨ SHELL SHATTERED!', 'Warmth reconnected.', 'Punch / Click to collect!');
-          }
+          hud.show('📞 MAYA ON CALL', dialogueLines[0], 'Press [X] to Continue');
         }
       }
 

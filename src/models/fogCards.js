@@ -14,7 +14,7 @@ export function createFogCards(scene, count = 24) {
 
   const mat = new THREE.ShaderMaterial({
     vertexShader: `varying vec2 vUv;varying vec3 vWP,vVP;void main(){vUv=uv;vec4 wp=modelMatrix*vec4(0.0,0.0,0.0,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(0.0,0.0,0.0,1.0);mv.xy+=position.xy;vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
-    fragmentShader: `uniform float uTime,uAwakened,uFogDensity;varying vec2 vUv;varying vec3 vWP,vVP;void main(){float d=length(vVP),pF=smoothstep(16.0,50.0,d),hF=1.0-smoothstep(150.0,230.0,d);float bFade=smoothstep(0.0,0.42,vUv.y),tFade=smoothstep(1.0,0.65,vUv.y),edge=pow(sin(vUv.x*3.1416),1.4)*bFade*tFade;float t=uTime*0.25,wisp=sin(vWP.x*0.06+vWP.z*0.05+t*0.8)*cos(vWP.z*0.08-vWP.x*0.04-t*0.6)*0.5+0.5;vec3 col=mix(vec3(0.55,0.58,0.68),vec3(0.88,0.62,0.76)+vec3(0.06,0.08,0.12)*sin(t+vWP.x*0.1),uAwakened);gl_FragColor=vec4(col,edge*(0.24+wisp*0.32)*pF*hF*uFogDensity);}`,
+    fragmentShader: `uniform float uTime,uAwakened,uFogDensity;varying vec2 vUv;varying vec3 vWP,vVP;void main(){float d=length(vVP),pF=smoothstep(16.0,50.0,d),hF=1.0-smoothstep(150.0,230.0,d);float bFade=smoothstep(0.0,0.42,vUv.y),tFade=smoothstep(1.0,0.65,vUv.y),edge=pow(sin(vUv.x*3.1416),1.4)*bFade*tFade;float t=uTime*0.25,wisp=sin(vWP.x*0.06+vWP.z*0.05+t*0.8)*cos(vWP.z*0.08-vWP.x*0.04-t*0.6)*0.5+0.5;vec3 col=mix(vec3(0.45,0.35,0.48),vec3(0.95,0.62,0.76)+vec3(0.06,0.08,0.12)*sin(t+vWP.x*0.1),uAwakened);gl_FragColor=vec4(col,edge*(0.24+wisp*0.32)*pF*hF*uFogDensity);}`,
     uniforms,
     transparent: true,
     depthTest: true,

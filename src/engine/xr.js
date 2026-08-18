@@ -133,11 +133,14 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
         if (isMounted && unicorn) {
           if (isMoving) {
             vrMoveDir.normalize();
-            if (!wasMountedMove) audio.playUnicornJolt();
             hoofTimer += delta;
             if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
+            const targetYaw = unicorn.group.rotation.y;
+            let diff = targetYaw - xrGroup.rotation.y;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            xrGroup.rotation.y += diff * Math.min(1.0, delta * 3.5);
           }
-          wasMountedMove = isMoving;
           unicorn.move(vrMoveDir, delta);
           unicorn.update(delta, isMoving ? 'gallop' : 'idle');
           xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y + 1.25, unicorn.group.position.z);
@@ -148,7 +151,6 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
             footTimer += delta;
             if (footTimer > 0.44) { footTimer = 0; audio.playFootstep(); }
           }
-          wasMountedMove = false;
           const groundY = getTerrainHeight(xrGroup.position.x, xrGroup.position.z);
           if (xrGroup.position.y < groundY) xrGroup.position.y = groundY;
 

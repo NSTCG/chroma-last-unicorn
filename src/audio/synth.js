@@ -21,17 +21,17 @@ class AudioEngine {
     osc.start();
     this.droneFilter = flt;
 
-    // Ambient wind generator
+    // Ambient windy wooshy generator
     try {
       const bLen = this.ctx.sampleRate * 2;
-      const nBuf = this.ctx.createBuffer(1, bLen, this.ctx.sampleRate);
-      const data = nBuf.getChannelData(0);
+      this.noiseBuf = this.ctx.createBuffer(1, bLen, this.ctx.sampleRate);
+      const data = this.noiseBuf.getChannelData(0);
       for (let i = 0; i < bLen; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
       const noise = this.ctx.createBufferSource();
-      noise.buffer = nBuf; noise.loop = true;
+      noise.buffer = this.noiseBuf; noise.loop = true;
       const wFlt = this.ctx.createBiquadFilter(), wGn = this.ctx.createGain();
-      wFlt.type = 'bandpass'; wFlt.frequency.value = 340; wFlt.Q.value = 2.5;
-      wGn.gain.value = 0.07;
+      wFlt.type = 'bandpass'; wFlt.frequency.value = 380; wFlt.Q.value = 1.8;
+      wGn.gain.value = 0.13;
       noise.connect(wFlt); wFlt.connect(wGn); wGn.connect(this.masterGain);
       noise.start();
       this.windFilter = wFlt;
@@ -40,7 +40,7 @@ class AudioEngine {
     setInterval(() => {
       if (!this.ctx || this.ctx.state !== 'running') return;
       this.step = (this.step + 1) % 16;
-      if (this.windFilter) this.windFilter.frequency.value = 280 + Math.sin(performance.now() * 0.001) * 160;
+      if (this.windFilter) this.windFilter.frequency.value = 340 + Math.sin(performance.now() * 0.0008) * 220 + Math.cos(performance.now() * 0.0017) * 90;
       if (this.awakenedLevel > 0.15 && this.step % 2 === 0) {
         this.tone('triangle', this.scale[(this.step / 2) % 8] * (this.step % 4 === 0 ? 2 : 1), 0.25, 0.12);
       }
@@ -61,18 +61,26 @@ class AudioEngine {
     osc.start(); osc.stop(t + dur);
   }
 
+  playGrassRustle() {
+    if (!this.ctx || !this.noiseBuf) return;
+    const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuf;
+    const flt = this.ctx.createBiquadFilter(), g = this.ctx.createGain(), t = this.ctx.currentTime;
+    flt.type = 'bandpass'; flt.frequency.setValueAtTime(580 + Math.random() * 260, t); flt.Q.value = 1.6;
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    src.connect(flt); flt.connect(g); g.connect(this.masterGain);
+    src.start(t); src.stop(t + 0.2);
+  }
+
   playFootstep() {
     this.tone('triangle', 95 + Math.random() * 20, 0.06, 0.08, 45);
+    this.playGrassRustle();
   }
 
   playHoofbeat() {
     this.tone('triangle', 130 + Math.random() * 20, 0.07, 0.15, 60);
+    this.playGrassRustle();
     setTimeout(() => this.tone('triangle', 155 + Math.random() * 20, 0.06, 0.11, 70), 75);
-  }
-
-  playUnicornJolt() {
-    this.tone('sine', 520, 0.22, 0.18, 760);
-    this.tone('triangle', 260, 0.28, 0.20, 420);
   }
 
   playChime(shardIndex = 0) {
