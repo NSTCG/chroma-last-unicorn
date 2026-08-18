@@ -104,9 +104,12 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       const unicorn = getUnicornState ? getUnicornState().unicorn : null;
 
       if (session?.inputSources) {
-        camera.getWorldDirection(forwardVec);
-        forwardVec.y = 0; forwardVec.normalize();
-        rightVec.crossVectors(forwardVec, camera.up).normalize();
+        const headCam = renderer.xr.getCamera() || camera;
+        headCam.getWorldDirection(forwardVec);
+        forwardVec.y = 0;
+        if (forwardVec.lengthSq() < 0.001) forwardVec.set(0, 0, -1);
+        else forwardVec.normalize();
+        rightVec.set(-forwardVec.z, 0, forwardVec.x).normalize();
         vrMoveDir.set(0, 0, 0);
 
         for (const source of session.inputSources) {
@@ -116,8 +119,14 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
 
           if (!source.gamepad?.axes) continue;
           const axes = source.gamepad.axes;
-          const ax = axes[2] !== undefined ? axes[2] : axes[0] || 0;
-          const ay = axes[3] !== undefined ? axes[3] : axes[1] || 0;
+          let ax = 0, ay = 0;
+          if (axes.length >= 4) {
+            ax = Math.abs(axes[2]) > 0.08 ? axes[2] : (Math.abs(axes[0]) > 0.08 ? axes[0] : 0);
+            ay = Math.abs(axes[3]) > 0.08 ? axes[3] : (Math.abs(axes[1]) > 0.08 ? axes[1] : 0);
+          } else if (axes.length >= 2) {
+            ax = axes[0];
+            ay = axes[1];
+          }
 
           if (source.handedness === 'left') {
             if (Math.abs(ay) > 0.12) vrMoveDir.addScaledVector(forwardVec, -ay);
