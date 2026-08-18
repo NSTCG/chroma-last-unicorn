@@ -21,9 +21,11 @@ export function createWorld(scene) {
   };
   const groundMat = new THREE.ShaderMaterial({
     uniforms: groundUniforms,
-    vertexShader: `varying vec3 vWP;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-    fragmentShader: `uniform float uTime,uAwakened;varying vec3 vWP;float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);return smoothstep(0.2,0.85,(sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5)*0.65+(sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5)*0.35);}void main(){float c=cloudN(vWP.xz,uTime);vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);vec3 groundColor=gF*mix(gi,sun,c*0.42+0.58);vec3 skyHorizon=mix(vec3(0.24,0.18,0.28),vec3(0.92,0.52,0.64),uAwakened);gl_FragColor=vec4(mix(groundColor,skyHorizon,smoothstep(20.0,160.0,length(vWP-cameraPosition))*0.95),1.0);}`,
-    side: THREE.DoubleSide
+    vertexShader: `varying vec3 vWP,vVP;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `precision highp float;uniform float uTime,uAwakened;varying vec3 vWP,vVP;float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);return smoothstep(0.2,0.85,(sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5)*0.65+(sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5)*0.35);}void main(){float c=cloudN(vWP.xz,uTime);vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);vec3 groundLit=gF*mix(gi,sun,c*0.42+0.58);float alpha=1.0-smoothstep(110.0,240.0,length(vVP))*0.95;gl_FragColor=vec4(groundLit,alpha);}`,
+    side: THREE.DoubleSide,
+    transparent: true,
+    depthWrite: true
   });
 
   const groundGeo = new THREE.PlaneGeometry(550, 550, 48, 48);

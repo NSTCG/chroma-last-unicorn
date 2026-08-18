@@ -54,8 +54,10 @@ export function createGrassField(scene, count = 46000) {
 
   const mat = new THREE.ShaderMaterial({
     vertexShader: `uniform mat4 directionalShadowMatrix[1];uniform float uTime;varying vec2 vUv;varying vec3 vWP,vVP;varying float vH;varying vec4 vShadowCoord;void main(){vUv=uv;vH=uv.y;vec4 wp=instanceMatrix*vec4(position,1.0);float t=uTime,gust=sin(wp.x*0.06+wp.z*0.05+t*2.2)*0.85+sin(wp.x*0.14-wp.z*0.1+t*4.2)*0.45,w=(sin(wp.x*0.12+wp.z*0.09+t*2.8)+sin(wp.x*0.3-wp.z*0.22+t*5.0)*0.45)*0.48+gust*0.68,b=pow(vH,1.7)*w;wp.x+=b;wp.z+=b*0.75;wp.y-=abs(b)*0.22*vH;float curv=sin(wp.x*2.5+wp.z*1.8);wp.xz+=vec2(cos(curv),sin(curv))*(vH*0.28);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(wp.xyz,1.0);vVP=-mv.xyz;vShadowCoord=directionalShadowMatrix[0]*wp;gl_Position=projectionMatrix*mv;}`,
-    fragmentShader: `#include <packing>
+    fragmentShader: `
+      precision highp float;
       uniform sampler2D directionalShadowMap[1],uGrassMap;uniform float uTime,uAwakened;varying vec2 vUv;varying vec3 vWP,vVP;varying float vH;varying vec4 vShadowCoord;
+      float unpackRGBAToDepth(const in vec4 v){return dot(v,vec4(1.0/16777216.0,1.0/65536.0,1.0/256.0,1.0));}
       float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);return smoothstep(0.2,0.85,(sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5)*0.65+(sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5)*0.35);}
       void main(){
         vec4 tex=texture2D(uGrassMap,vUv);
@@ -73,12 +75,13 @@ export function createGrassField(scene, count = 46000) {
         vec3 col=mix(groundLit,mix(mix(vec3(0.14,0.14,0.18),vec3(0.28,0.28,0.34),c),tipCol,uAwakened)*mix(gi,sun,shadowOcc*(c*0.42+0.58)),pow(vH,0.85));
         vec3 flwCol=mix(vec3(0.96,0.94,0.98),(vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(vWP.x*0.08+vWP.z*0.08)+vec3(0,0.33,0.67))))*1.25,uAwakened*0.7);
         col=mix(col,flwCol,step(0.85,tex.r*tex.b)*0.88);
-        vec3 skyHorizon=mix(vec3(0.24,0.18,0.28),vec3(0.92,0.52,0.64),uAwakened);
-        col=mix(col,skyHorizon,smoothstep(20.0,160.0,dist)*0.95);
-        gl_FragColor=vec4(col,1.0);
+        float dist=length(vVP);
+        col=mix(col,groundLit,smoothstep(35.0,140.0,dist)*0.96);
+        float alpha=1.0-smoothstep(110.0,220.0,dist)*0.95;
+        gl_FragColor=vec4(col,alpha);
       }`,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.shadowmap, uniforms]),
-    side: THREE.DoubleSide, transparent: false, depthWrite: true
+    side: THREE.DoubleSide, transparent: true, depthWrite: true
   });
 
   const mesh = new THREE.InstancedMesh(bladeGeo, mat, count);
