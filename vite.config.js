@@ -36,22 +36,16 @@ export default defineConfig(({ mode }) => {
         compress: {
           drop_console: !isDev,
           drop_debugger: !isDev,
-          passes: 5,
-          unsafe: true,
-          unsafe_arrows: true,
-          unsafe_comps: true,
-          unsafe_math: true,
-          unsafe_methods: true,
+          passes: 3,
           pure_getters: true,
-          booleans_as_integers: true
+          booleans_as_integers: false
         },
         mangle: {
           toplevel: true,
           properties: false // keep Three.js API calls safe
         },
         format: {
-          comments: false,
-          wrap_func_args: false
+          comments: false
         }
       },
       rollupOptions: {
