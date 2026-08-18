@@ -47,17 +47,20 @@ async function runBuildPipeline() {
         module: true,
         toplevel: true,
         compress: {
-          passes: 5,
+          passes: 6,
           unsafe: true,
           unsafe_arrows: true,
           unsafe_comps: true,
           unsafe_math: true,
           unsafe_methods: true,
+          unsafe_proto: true,
           hoist_funs: true,
           hoist_vars: true,
           reduce_vars: true,
           drop_console: true,
-          pure_getters: true
+          drop_debugger: true,
+          pure_getters: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
         },
         mangle: { toplevel: true }
       });
