@@ -55,7 +55,7 @@ class ChromaGame {
     this.sky = createRainbowSky(this.scene);
     this.particles = createParticleSystem(this.scene);
     this.world = createWorld(this.scene);
-    this.grass = createGrassField(this.scene, 58000);
+    this.grass = createGrassField(this.scene, 46000);
     this.unicorn = createUnicorn(this.scene);
 
     this.unicornState = 'idle';

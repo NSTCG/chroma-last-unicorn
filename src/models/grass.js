@@ -32,11 +32,35 @@ function createDenseGrassTexture(THREE) {
   return new THREE.CanvasTexture(canvas);
 }
 
-export function createGrassField(scene, count = 58000) {
+function createTaperedBladeGeometry(THREE, width = 0.72, height = 1.95) {
+  const hw = width * 0.5, geom = new THREE.BufferGeometry();
+  const positions = new Float32Array([
+    -hw, 0, 0,
+     hw, 0, 0,
+    -hw * 0.92, height * 0.55, 0,
+     hw * 0.92, height * 0.55, 0,
+    -hw * 0.42, height, 0,
+     hw * 0.42, height, 0
+  ]);
+  const uvs = new Float32Array([
+    0.0, 0.0,
+    1.0, 0.0,
+    0.04, 0.55,
+    0.96, 0.55,
+    0.29, 1.0,
+    0.71, 1.0
+  ]);
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geom.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4]);
+  geom.computeVertexNormals();
+  return geom;
+}
+
+export function createGrassField(scene, count = 46000) {
   const THREE = window.THREE;
   const grassTex = createDenseGrassTexture(THREE);
-  const bladeGeo = new THREE.PlaneGeometry(0.72, 1.95, 1, 2);
-  bladeGeo.translate(0, 0.975, 0);
+  const bladeGeo = createTaperedBladeGeometry(THREE, 0.72, 1.95);
 
   const uniforms = {
     uTime: { value: 0 },

@@ -33,11 +33,20 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     controllers.push(controller);
   }
 
-  renderer.xr.addEventListener('sessionstart', () => {
+  renderer.xr.addEventListener('sessionstart', async () => {
     try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
     const s = renderer.xr.getSession();
-    if (s?.renderState?.baseLayer) {
-      try { s.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
+    if (s) {
+      if (s.updateTargetFrameRate) {
+        try {
+          const rates = s.supportedFrameRates ? Array.from(s.supportedFrameRates) : [];
+          let target = rates.length ? rates.reduce((p, c) => Math.abs(c - 75) < Math.abs(p - 75) ? c : p, rates[0]) : 75;
+          await s.updateTargetFrameRate(target);
+        } catch (_) {}
+      }
+      if (s.renderState?.baseLayer) {
+        try { s.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
+      }
     }
   });
 
