@@ -1,4 +1,5 @@
 import { getTerrainHeight } from '../models/world.js';
+import { audio } from '../audio/synth.js';
 
 export const getHit = (hits) => {
   let h = hits[0]?.object;
@@ -14,6 +15,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   const raycaster = new THREE.Raycaster();
   const screenCenter = new THREE.Vector2(0, 0);
   const crosshair = document.getElementById('crosshair');
+  let footTimer = 0, hoofTimer = 0, wasMountedMove = false;
 
   const onMouseMove = (mx, my) => {
     if (renderer?.xr?.isPresenting) return;
@@ -84,15 +86,24 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
 
       if (isMounted && unicorn) {
         const isMoving = moveDir.lengthSq() > 0.001;
-        if (isMoving) moveDir.normalize();
+        if (isMoving) {
+          moveDir.normalize();
+          if (!wasMountedMove) audio.playUnicornJolt();
+          hoofTimer += delta;
+          if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
+        }
+        wasMountedMove = isMoving;
         unicorn.move(moveDir, delta);
         unicorn.update(delta, isMoving ? 'gallop' : 'idle');
         const uPos = unicorn.group.position;
-        camera.position.set(uPos.x, uPos.y + 2.05, uPos.z - 0.2);
+        camera.position.set(uPos.x, uPos.y + 1.85, uPos.z);
       } else {
+        wasMountedMove = false;
         if (moveDir.lengthSq() > 0) {
           moveDir.normalize();
           camera.position.addScaledVector(moveDir, moveSpeed * delta);
+          footTimer += delta;
+          if (footTimer > 0.44) { footTimer = 0; audio.playFootstep(); }
         }
         if (keys['Space']) camera.position.y += moveSpeed * 0.7 * delta;
         if (keys['ShiftLeft'] || keys['KeyC']) camera.position.y = Math.max(1.7, camera.position.y - moveSpeed * 0.7 * delta);
@@ -111,3 +122,4 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
     }
   };
 }
+

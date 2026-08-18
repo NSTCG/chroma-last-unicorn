@@ -61,7 +61,9 @@ class ChromaGame {
     this.isMounted = false;
 
     this.narrative = new NarrativeManager(this);
-    this.shards = createShardsSystem(this.scene, () => this.narrative.onShardCollected(), this.vrHud);
+
+    const pulseHaptics = (h, i, d) => this.xr?.pulseHaptics?.(h, i, d);
+    this.shards = createShardsSystem(this.scene, () => this.narrative.onShardCollected(), this.vrHud, pulseHaptics);
 
     const getInteractive = () => [...this.shards.getInteractiveMeshes(), ...this.unicorn.getInteractiveMeshes()];
 
@@ -85,6 +87,8 @@ class ChromaGame {
       this.vrHud
     );
 
+    if (this.vrHud?.setHaptics) this.vrHud.setHaptics(pulseHaptics);
+
     this.initUI();
     this.startLoop();
     setupDevStudio(this);
@@ -92,8 +96,9 @@ class ChromaGame {
 
   toggleMount() {
     this.isMounted = !this.isMounted;
+    if (this.xr?.pulseHaptics) this.xr.pulseHaptics('both', 0.8, 180);
     if (this.isMounted) {
-      this.vrHud.show('🦄 MOUNTED UNICORN', 'WASD to ride, Click to dismount', '', 4000);
+      this.vrHud.show('🦄 MOUNTED UNICORN', 'WASD / Stick to ride, Click to dismount');
     } else {
       const ux = this.unicorn.group.position.x - 1.8;
       const uz = this.unicorn.group.position.z + 1.2;

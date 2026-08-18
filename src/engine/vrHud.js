@@ -81,13 +81,21 @@ export function createVRHUD(scene, camera) {
 
   redraw();
 
+  let pulseHaptics = null;
+
   const hud = {
     phoneGroup,
-    setShardCollected: (i) => { collectedMask |= (1 << i); redraw(); },
+    setHaptics: (fn) => { pulseHaptics = fn; },
+    setShardCollected: (i) => {
+      collectedMask |= (1 << i);
+      if (pulseHaptics) pulseHaptics('right', 0.65, 140);
+      redraw();
+    },
     show: (title, sub = '', act = '') => {
       cTitle = title; cSub = sub; cAct = act;
       tTitle = ''; tSub = ''; tAct = '';
       typeTimer = 0; isTyping = true;
+      if (pulseHaptics) pulseHaptics('right', 0.45, 80);
     },
     startCallTask: (shard, onComplete) => {
       callState = 'ready';

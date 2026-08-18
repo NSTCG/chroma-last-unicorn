@@ -1,5 +1,6 @@
 import { getTerrainHeight } from '../models/world.js';
 import { getHit } from './controls.js';
+import { audio } from '../audio/synth.js';
 
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState, vrHud) {
   const THREE = window.THREE;
@@ -14,6 +15,16 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   const controllers = [], raycaster = new THREE.Raycaster(), tempMatrix = new THREE.Matrix4();
   const lastPositions = [new THREE.Vector3(), new THREE.Vector3()];
   const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
+
+  const pulseHaptics = (hand = 'both', intensity = 0.5, duration = 100) => {
+    const s = renderer.xr.getSession();
+    if (!s?.inputSources) return;
+    for (const src of s.inputSources) {
+      if (hand === 'both' || src.handedness === hand) {
+        src.gamepad?.hapticActuators?.[0]?.pulse?.(intensity, duration);
+      }
+    }
+  };
 
   for (let i = 0; i < 2; i++) {
     const controller = renderer.xr.getController(i);
@@ -69,13 +80,14 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     }
   };
 
-  let snapTurnCooldown = 0;
+  let snapTurnCooldown = 0, footTimer = 0, hoofTimer = 0, wasMountedMove = false;
   const forwardVec = new THREE.Vector3(), rightVec = new THREE.Vector3(), currentPos = new THREE.Vector3(), vrMoveDir = new THREE.Vector3();
 
   return {
     controllers,
     xrGroup,
     startVR,
+    pulseHaptics,
     update: (delta) => {
       const session = renderer.xr.getSession();
       if (snapTurnCooldown > 0) snapTurnCooldown -= delta;
@@ -117,17 +129,26 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
           }
         }
 
+        const isMoving = vrMoveDir.lengthSq() > 0.001;
         if (isMounted && unicorn) {
-          const isMoving = vrMoveDir.lengthSq() > 0.001;
-          if (isMoving) vrMoveDir.normalize();
+          if (isMoving) {
+            vrMoveDir.normalize();
+            if (!wasMountedMove) audio.playUnicornJolt();
+            hoofTimer += delta;
+            if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
+          }
+          wasMountedMove = isMoving;
           unicorn.move(vrMoveDir, delta);
           unicorn.update(delta, isMoving ? 'gallop' : 'idle');
-          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y + 1.25, unicorn.group.position.z - 0.2);
+          xrGroup.position.set(unicorn.group.position.x, unicorn.group.position.y + 1.25, unicorn.group.position.z);
         } else {
-          if (vrMoveDir.lengthSq() > 0.001) {
+          if (isMoving) {
             vrMoveDir.normalize();
             xrGroup.position.addScaledVector(vrMoveDir, 7.5 * delta);
+            footTimer += delta;
+            if (footTimer > 0.44) { footTimer = 0; audio.playFootstep(); }
           }
+          wasMountedMove = false;
           const groundY = getTerrainHeight(xrGroup.position.x, xrGroup.position.z);
           if (xrGroup.position.y < groundY) xrGroup.position.y = groundY;
 
@@ -154,3 +175,4 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     getRightController: () => controllers[1] || controllers[0]
   };
 }
+

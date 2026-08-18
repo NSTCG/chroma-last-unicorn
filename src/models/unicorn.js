@@ -19,22 +19,12 @@ export function createUnicorn(scene) {
   const body = new THREE.Group();
   group.add(body);
 
-  // Torso
-  const chestGeo = new THREE.SphereGeometry(0.38, 8, 8);
-  chestGeo.scale(0.9, 1.15, 1.15);
-  const chest = new THREE.Mesh(chestGeo, pearlMat);
-  chest.position.set(0, 1.30, 0.44);
-
-  const barrelGeo = new THREE.CylinderGeometry(0.36, 0.26, 0.90, 8);
-  barrelGeo.rotateX(Math.PI / 2);
-  barrelGeo.scale(0.9, 1.15, 1.0);
-  const barrel = new THREE.Mesh(barrelGeo, pearlMat);
-  barrel.position.set(0, 1.25, 0);
-
-  const rumpGeo = new THREE.SphereGeometry(0.27, 8, 8);
-  rumpGeo.scale(0.9, 1.08, 1.08);
-  const rump = new THREE.Mesh(rumpGeo, pearlMat);
-  rump.position.set(0, 1.20, -0.45);
+  const chestGeo = new THREE.SphereGeometry(0.38, 8, 8); chestGeo.scale(0.9, 1.15, 1.15);
+  const barrelGeo = new THREE.CylinderGeometry(0.36, 0.26, 0.90, 8); barrelGeo.rotateX(Math.PI / 2); barrelGeo.scale(0.9, 1.15, 1.0);
+  const rumpGeo = new THREE.SphereGeometry(0.27, 8, 8); rumpGeo.scale(0.9, 1.08, 1.08);
+  const chest = new THREE.Mesh(chestGeo, pearlMat); chest.position.set(0, 1.30, 0.44);
+  const barrel = new THREE.Mesh(barrelGeo, pearlMat); barrel.position.set(0, 1.25, 0);
+  const rump = new THREE.Mesh(rumpGeo, pearlMat); rump.position.set(0, 1.20, -0.45);
   body.add(chest, barrel, rump);
 
   const neckHeadPivot = new THREE.Group();
@@ -65,65 +55,32 @@ export function createUnicorn(scene) {
     return geo;
   };
 
-  const neckGeo = buildLoft([
-    [0.44,1.30,0.22,0.28],[0.62,1.54,0.18,0.23],[0.82,1.76,0.14,0.18],
-    [1.02,1.94,0.12,0.15],[1.20,1.94,0.13,0.14],[1.38,1.78,0.09,0.10],[1.56,1.66,0.06,0.07]
-  ], 8, [0, 1.64, 1.62]);
-  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat));
-
-  const maneGeo = buildLoft([
-    [0.96,2.02,0.024,0.038],[0.82,1.92,0.035,0.065],[0.66,1.76,0.042,0.088],
-    [0.48,1.60,0.045,0.092],[0.32,1.44,0.024,0.038]
-  ], 6);
-  neckHeadPivot.add(new THREE.Mesh(maneGeo, rainbowMat));
+  const neckGeo = buildLoft([[0.44,1.3,0.22,0.28],[0.62,1.54,0.18,0.23],[0.82,1.76,0.14,0.18],[1.02,1.94,0.12,0.15],[1.2,1.94,0.13,0.14],[1.38,1.78,0.09,0.1],[1.56,1.66,0.06,0.07]], 8, [0, 1.64, 1.62]);
+  const maneGeo = buildLoft([[0.96,2.02,0.024,0.038],[0.82,1.92,0.035,0.065],[0.66,1.76,0.042,0.088],[0.48,1.6,0.045,0.092],[0.32,1.44,0.024,0.038]], 6);
+  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat), new THREE.Mesh(maneGeo, rainbowMat));
 
   const earGeo = new THREE.ConeGeometry(0.04, 0.20, 5);
-  const earL = new THREE.Mesh(earGeo, pearlMat);
-  earL.position.set(0.075, 2.08, 1.12);
-  earL.rotation.set(-0.25, 0, -0.15);
-  const earR = new THREE.Mesh(earGeo, pearlMat);
-  earR.position.set(-0.075, 2.08, 1.12);
-  earR.rotation.set(-0.25, 0, 0.15);
-  neckHeadPivot.add(earL, earR);
-
-  const hornGeo = new THREE.ConeGeometry(0.026, 0.42, 6);
-  hornGeo.rotateX(0.72);
-  hornGeo.translate(0, 0.20, 0.12);
-  const horn = new THREE.Mesh(hornGeo, goldMat);
-  horn.position.set(0, 1.96, 1.22);
-  neckHeadPivot.add(horn);
+  const earL = new THREE.Mesh(earGeo, pearlMat); earL.position.set(0.075, 2.08, 1.12); earL.rotation.set(-0.25, 0, -0.15);
+  const earR = new THREE.Mesh(earGeo, pearlMat); earR.position.set(-0.075, 2.08, 1.12); earR.rotation.set(-0.25, 0, 0.15);
+  const hornGeo = new THREE.ConeGeometry(0.026, 0.42, 6); hornGeo.rotateX(0.72); hornGeo.translate(0, 0.20, 0.12);
+  const horn = new THREE.Mesh(hornGeo, goldMat); horn.position.set(0, 1.96, 1.22);
+  neckHeadPivot.add(earL, earR, horn);
 
   const tailPivot = new THREE.Group();
   tailPivot.position.set(0, 1.24, -0.55);
   body.add(tailPivot);
-
-  const tailGeo = buildLoft([
-    [0,0,0.06],[ -0.18,0.04,0.09],[ -0.36,-0.25,0.11],[ -0.44,-0.52,0.08],[ -0.40,-0.78,0.02]
-  ], 6);
+  const tailGeo = buildLoft([[0,0,0.06],[-0.18,0.04,0.09],[-0.36,-0.25,0.11],[-0.44,-0.52,0.08],[-0.4,-0.78,0.02]], 6);
   tailPivot.add(new THREE.Mesh(tailGeo, rainbowMat));
 
-  // Shared Leg Geometries
-  const uGeo = new THREE.CylinderGeometry(0.1, 0.065, 0.55, 6);
-  uGeo.translate(0, -0.275, 0);
-  const lGeo = new THREE.CylinderGeometry(0.055, 0.045, 0.52, 6);
-  lGeo.translate(0, -0.26, 0);
-  const hoofGeo = new THREE.CylinderGeometry(0.045, 0.075, 0.12, 6);
-  hoofGeo.translate(0, -0.57, 0.012);
+  const uGeo = new THREE.CylinderGeometry(0.1, 0.065, 0.55, 6); uGeo.translate(0, -0.275, 0);
+  const lGeo = new THREE.CylinderGeometry(0.055, 0.045, 0.52, 6); lGeo.translate(0, -0.26, 0);
+  const hoofGeo = new THREE.CylinderGeometry(0.045, 0.075, 0.12, 6); hoofGeo.translate(0, -0.57, 0.012);
 
-  const legs = [
-    [0.18,0.42,true],[-0.18,0.42,true],[0.15,-0.45,false],[-0.15,-0.45,false]
-  ].map(([x, z, isFront]) => {
-    const hip = new THREE.Group();
-    hip.position.set(x, isFront ? 1.18 : 1.10, z);
-    body.add(hip);
+  const legs = [[0.18,0.42,true],[-0.18,0.42,true],[0.15,-0.45,false],[-0.15,-0.45,false]].map(([x, z, isFront]) => {
+    const hip = new THREE.Group(); hip.position.set(x, isFront ? 1.18 : 1.10, z); body.add(hip);
     hip.add(new THREE.Mesh(uGeo, pearlMat));
-
-    const knee = new THREE.Group();
-    knee.position.set(0, -0.55, 0);
-    hip.add(knee);
-    knee.add(new THREE.Mesh(lGeo, pearlMat));
-    knee.add(new THREE.Mesh(hoofGeo, goldMat));
-
+    const knee = new THREE.Group(); knee.position.set(0, -0.55, 0); hip.add(knee);
+    knee.add(new THREE.Mesh(lGeo, pearlMat), new THREE.Mesh(hoofGeo, goldMat));
     return { hip, knee };
   });
 
@@ -135,9 +92,7 @@ export function createUnicorn(scene) {
   let gallopTimer = 0, flightTimer = 0, currentHeading = 0;
 
   const unicornObj = {
-    group,
-    mat: pearlMat,
-    isMounted: false,
+    group, mat: pearlMat, isMounted: false,
     getInteractiveMeshes: () => [hitbox],
     setAwakened: (val) => { uniforms.uColorAwakened.value = val; },
     move: (moveVector, delta) => {
@@ -159,28 +114,20 @@ export function createUnicorn(scene) {
       if (state === 'idle') {
         const rr = Math.min(1.0, delta * 14.0);
         for (let i = 0; i < 4; i++) {
-          legs[i].hip.rotation.x += (0 - legs[i].hip.rotation.x) * rr;
-          legs[i].hip.rotation.y += (0 - legs[i].hip.rotation.y) * rr;
-          legs[i].hip.rotation.z += (0 - legs[i].hip.rotation.z) * rr;
-          legs[i].knee.rotation.x += (0 - legs[i].knee.rotation.x) * rr;
+          legs[i].hip.rotation.x += -legs[i].hip.rotation.x * rr;
+          legs[i].knee.rotation.x += -legs[i].knee.rotation.x * rr;
         }
         neckHeadPivot.rotation.x += (Math.sin(t * 1.5) * 0.025 - neckHeadPivot.rotation.x) * rr;
         neckHeadPivot.rotation.y += (Math.sin(t * 0.8) * 0.04 - neckHeadPivot.rotation.y) * rr;
         body.position.y += (Math.sin(t * 1.5) * 0.015 - body.position.y) * rr;
         tailPivot.rotation.y = Math.sin(t * 2.0) * 0.15;
-        tailPivot.rotation.z = Math.sin(t * 1.5) * 0.06;
       } else if (state === 'gallop' || state === 'ascend') {
         gallopTimer += delta * 9.5;
         const s = Math.sin(gallopTimer), c = Math.cos(gallopTimer);
-        legs[0].hip.rotation.x = s * 0.65;
-        legs[0].knee.rotation.x = Math.max(0, -s * 0.7);
-        legs[1].hip.rotation.x = -s * 0.65;
-        legs[1].knee.rotation.x = Math.max(0, s * 0.7);
-        legs[2].hip.rotation.x = -c * 0.65;
-        legs[2].knee.rotation.x = Math.max(0, c * 0.7);
-        legs[3].hip.rotation.x = c * 0.65;
-        legs[3].knee.rotation.x = Math.max(0, -c * 0.7);
-
+        legs[0].hip.rotation.x = s * 0.65; legs[0].knee.rotation.x = Math.max(0, -s * 0.7);
+        legs[1].hip.rotation.x = -s * 0.65; legs[1].knee.rotation.x = Math.max(0, s * 0.7);
+        legs[2].hip.rotation.x = -c * 0.65; legs[2].knee.rotation.x = Math.max(0, c * 0.7);
+        legs[3].hip.rotation.x = c * 0.65; legs[3].knee.rotation.x = Math.max(0, -c * 0.7);
         body.position.y = Math.abs(s) * 0.18;
         neckHeadPivot.rotation.x = s * 0.08;
         tailPivot.rotation.y = s * 0.35;
@@ -198,14 +145,14 @@ export function createUnicorn(scene) {
   };
 
   hitbox.userData = { isUnicorn: true, unicorn: unicornObj, data: { isUnicorn: true } };
-
   group.traverse((obj) => {
     if (obj.isMesh) {
       if (obj !== hitbox) obj.castShadow = true;
-      obj.userData = { isUnicorn: true, unicorn: unicornObj, data: { isUnicorn: true } };
+      obj.userData = hitbox.userData;
     }
   });
 
   scene.add(group);
   return unicornObj;
 }
+

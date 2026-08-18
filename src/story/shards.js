@@ -12,11 +12,10 @@ export const SHARDS_DATA = [
   ['Violet', 0xcc22ee, 0, -82, 'Dreams returned.', '✨ Daydream!']
 ].map(([name, color, x, z, phrase, action], index) => ({ name, color, pos: [x, 0, z], phrase, action, index }));
 
-export function createShardsSystem(scene, onShardCollected, vrHud) {
+export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics) {
   const THREE = window.THREE;
   const shards = [], shardsGroup = new THREE.Group();
   scene.add(shardsGroup);
-
 
   const shardGeo = new THREE.OctahedronGeometry(1.0, 0);
   const shellGeo = new THREE.IcosahedronGeometry(1.6, 1);
@@ -38,7 +37,6 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
     orbLight.position.copy(coreMesh.position);
     shardsGroup.add(orbLight);
 
-
     const beacon = new THREE.Mesh(beaconGeo, new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.40, blending: THREE.AdditiveBlending }));
     beacon.position.copy(coreMesh.position);
     shardsGroup.add(beacon);
@@ -52,10 +50,12 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
     if (!shard.unlocked) {
       shard.vibrate = 0.45;
       audio.playResonate();
+      if (pulseHaptics) pulseHaptics('both', 0.65, 120);
       if (shard.data.index === 2) {
         if (vrHud?.startCallTask) vrHud.startCallTask(shard, () => {
           shard.unlocked = true;
           shard.shellMesh.visible = false;
+          if (pulseHaptics) pulseHaptics('both', 0.9, 250);
         });
       } else {
         if (vrHud) vrHud.show(shard.data.name + ' [LOCKED]', shard.data.action, 'Prototype locked in Demo');
@@ -69,6 +69,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
     if (!shard || shard.collected) return null;
     shard.collected = true;
     audio.playChime(shard.data.color);
+    if (pulseHaptics) pulseHaptics('both', 0.8, 180);
     shard.coreMesh.visible = shard.shellMesh.visible = shard.beacon.visible = false;
     shard.orbLight.intensity = 0.4;
     if (vrHud?.setShardCollected) vrHud.setShardCollected(shard.data.index);
