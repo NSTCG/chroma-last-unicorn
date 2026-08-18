@@ -60,7 +60,7 @@ class AudioEngine {
 
   setAwakened(val) {
     this.awakenedLevel = val;
-    if (this.droneFilter && this.ctx) this.droneFilter.frequency.setValueAtTime(160 + val * 500, this.ctx.currentTime);
+    if (this.droneFilter) this.droneFilter.frequency.value = 160 + val * 640;
   }
 }
 
