@@ -62,9 +62,8 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   });
 
   const startVR = async () => {
-    if (!navigator.xr) return alert('WebXR not supported.');
+    if (!navigator.xr) return alert('WebXR not supported in this browser.');
     try {
-      if (!(await navigator.xr.isSessionSupported('immersive-vr'))) return alert('VR not supported.');
       const session = await navigator.xr.requestSession('immersive-vr', {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       });
@@ -76,7 +75,8 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       await renderer.xr.setSession(session);
       try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
     } catch (err) {
-      console.error(err);
+      console.error('Failed to start VR session:', err);
+      alert('Could not start VR session: ' + (err?.message || err));
     }
   };
 
@@ -104,7 +104,10 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       const unicorn = getUnicornState ? getUnicornState().unicorn : null;
 
       if (session?.inputSources) {
-        const headCam = renderer.xr.getCamera() || camera;
+        let headCam = camera;
+        try {
+          if (renderer.xr.isPresenting && renderer.xr.getCamera) headCam = renderer.xr.getCamera(camera) || camera;
+        } catch (_) {}
         headCam.getWorldDirection(forwardVec);
         forwardVec.y = 0;
         if (forwardVec.lengthSq() < 0.001) forwardVec.set(0, 0, -1);
