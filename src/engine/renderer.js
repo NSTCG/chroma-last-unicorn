@@ -19,12 +19,11 @@ export function createRenderer() {
   const sunLight = new THREE.DirectionalLight(0xffecd0, 1.45);
   sunLight.position.set(30, 55, 20);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = sunLight.shadow.mapSize.height = 1024;
+  sunLight.shadow.mapSize.set(1024, 1024);
   sunLight.shadow.camera.near = 0.5;
   sunLight.shadow.camera.far = 180;
-  const d = 85;
-  sunLight.shadow.camera.left = sunLight.shadow.camera.bottom = -d;
-  sunLight.shadow.camera.right = sunLight.shadow.camera.top = d;
+  const d = 85, sc = sunLight.shadow.camera;
+  sc.left = sc.bottom = -d; sc.right = sc.top = d;
   sunLight.shadow.bias = -0.0001;
   sunLight.shadow.normalBias = 0.08;
 

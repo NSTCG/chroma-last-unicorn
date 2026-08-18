@@ -3,13 +3,13 @@ import { audio } from '../audio/synth.js';
 import { getTerrainHeight } from '../models/world.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -48, 18, 'Fire restored.', '✨ Draw art!'],
-  ['Orange', 0xff7700, 52, 26, 'Play restored.', '✨ Play games!'],
-  ['Yellow', 0xffcc00, -62, -42, 'Warmth restored.', '✨ Call friends!'],
-  ['Green', 0x11cc44, 68, -36, 'Wonder restored.', '✨ Gaze at sky!'],
-  ['Blue', 0x00aaff, -38, 68, 'Peace restored.', '✨ Breathe deep!'],
-  ['Indigo', 0x5533ee, 45, 72, 'Mystery restored.', '✨ Read stories!'],
-  ['Violet', 0xcc22ee, 0, -82, 'Dreams restored.', '✨ Daydream!']
+  ['Red', 0xff2244, -48, 18, 'Fire returned.', '✨ Draw art!'],
+  ['Orange', 0xff7700, 52, 26, 'Play returned.', '✨ Play games!'],
+  ['Yellow', 0xffcc00, -62, -42, 'Warmth returned.', '✨ Call friends!'],
+  ['Green', 0x11cc44, 68, -36, 'Wonder returned.', '✨ Gaze at sky!'],
+  ['Blue', 0x00aaff, -38, 68, 'Peace returned.', '✨ Breathe deep!'],
+  ['Indigo', 0x5533ee, 45, 72, 'Mystery returned.', '✨ Read stories!'],
+  ['Violet', 0xcc22ee, 0, -82, 'Dreams returned.', '✨ Daydream!']
 ].map(([name, color, x, z, phrase, action], index) => ({ name, color, pos: [x, 0, z], phrase, action, index }));
 
 export function createShardsSystem(scene, onShardCollected, vrHud) {
@@ -47,6 +47,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
     const orbLight = new THREE.PointLight(data.color, 2.2, 22);
     orbLight.position.copy(coreMesh.position);
     shardsGroup.add(orbLight);
+
 
     const beacon = new THREE.Mesh(beaconGeo, new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.40, blending: THREE.AdditiveBlending }));
     beacon.position.copy(coreMesh.position);
