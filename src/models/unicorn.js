@@ -7,7 +7,7 @@ export function createUnicorn(scene) {
   const uniforms = { uTime: { value: 0 }, uColorAwakened: { value: 0 } };
 
   const vs = `varying vec3 vN,vWP,vV;void main(){vN=normalize(normalMatrix*normal);vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}`;
-  const fs = `precision highp float;uniform float uTime,uMat;varying vec3 vN,vWP,vV;vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(1.0)*t+vec3(0.0,0.33,0.67)));}void main(){vec3 N=normalize(gl_FrontFacing?vN:-vN);vec3 V=normalize(vV);vec3 L=normalize(vec3(0.5,1.0,0.4));float d=max(dot(N,L),0.0),toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6,spec=pow(max(dot(reflect(-L,N),V),0.0),20.0),fr=pow(1.0-max(dot(N,V),0.0),2.2),outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45,gold=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65,hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9),base=uMat>1.5?hair:(uMat>0.5?gold:pearl),col=mix(base+spec*0.45,vec3(0.04,0.02,0.07),outl*0.95);gl_FragColor=vec4(col,1.0);}`;
+  const fs = `precision highp float;uniform float uTime,uMat;varying vec3 vN,vWP,vV;vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(t)+vec3(0,0.33,0.67)));}void main(){vec3 N=normalize(gl_FrontFacing?vN:-vN);vec3 V=normalize(vV);vec3 L=normalize(vec3(0.5,1.0,0.4));float d=max(dot(N,L),0.0),toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6,spec=pow(max(dot(reflect(-L,N),V),0.0),20.0),fr=pow(1.0-max(dot(N,V),0.0),2.2),outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45,gold=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65,hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9),base=uMat>1.5?hair:(uMat>0.5?gold:pearl);gl_FragColor=vec4(mix(base+spec*0.45,vec3(0.04,0.02,0.07),outl*0.95),1.0);}`;
 
   const makeMat = (uMat) => new THREE.ShaderMaterial({
     vertexShader: vs, fragmentShader: fs,
@@ -17,7 +17,6 @@ export function createUnicorn(scene) {
 
   const pearlMat = makeMat(0), goldMat = makeMat(1), rainbowMat = makeMat(2);
   const body = new THREE.Group();
-  body.rotation.y = Math.PI; // Face standard Three.js -Z forward
   group.add(body);
 
   const chestGeo = new THREE.SphereGeometry(0.38, 8, 8); chestGeo.scale(0.9, 1.15, 1.15);
@@ -31,22 +30,46 @@ export function createUnicorn(scene) {
   const neckHeadPivot = new THREE.Group();
   body.add(neckHeadPivot);
 
-  const neckGeo = new THREE.CylinderGeometry(0.12, 0.26, 1.1, 7); neckGeo.rotateX(-0.68); neckGeo.translate(0, 1.72, 0.72);
-  const headGeo = new THREE.SphereGeometry(0.16, 7, 7); headGeo.scale(0.85, 1.1, 1.4); headGeo.translate(0, 2.05, 1.15);
-  const maneGeo = new THREE.BoxGeometry(0.06, 0.9, 0.45); maneGeo.rotateX(-0.68); maneGeo.translate(0, 1.82, 0.62);
-  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat), new THREE.Mesh(headGeo, pearlMat), new THREE.Mesh(maneGeo, rainbowMat));
+  const buildLoft = (rings, segs, tip) => {
+    const verts = [], inds = [];
+    rings.forEach(([rx, ry, rz, rad]) => {
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        verts.push(rx + Math.cos(a) * rad, ry + Math.sin(a) * rad, rz);
+      }
+    });
+    const tipIdx = verts.length / 3;
+    if (tip) verts.push(...tip);
+    for (let r = 0; r < rings.length - 1; r++) {
+      const r0 = r * segs, r1 = (r + 1) * segs;
+      for (let i = 0; i < segs; i++) inds.push(r0 + i, r0 + (i + 1) % segs, r1 + (i + 1) % segs, r0 + i, r1 + (i + 1) % segs, r1 + i);
+    }
+    if (tip) {
+      const lr = (rings.length - 1) * segs;
+      for (let i = 0; i < segs; i++) inds.push(lr + i, lr + (i + 1) % segs, tipIdx);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+    geo.setIndex(inds);
+    geo.computeVertexNormals();
+    return geo;
+  };
+
+  const neckGeo = buildLoft([[0,1.3,0.44,0.24],[0,1.54,0.62,0.2],[0,1.76,0.82,0.16],[0,1.94,1.02,0.13],[0,1.94,1.2,0.14],[0,1.78,1.38,0.1],[0,1.66,1.56,0.07]], 8, [0, 1.64, 1.62]);
+  const maneGeo = buildLoft([[0,2.02,0.96,0.03],[0,1.92,0.82,0.05],[0,1.76,0.66,0.06],[0,1.6,0.48,0.07],[0,1.44,0.32,0.04]], 6);
+  neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat), new THREE.Mesh(maneGeo, rainbowMat));
 
   const earGeo = new THREE.ConeGeometry(0.04, 0.20, 5);
-  const earL = new THREE.Mesh(earGeo, pearlMat); earL.position.set(0.075, 2.18, 1.12); earL.rotation.set(-0.25, 0, -0.15);
-  const earR = new THREE.Mesh(earGeo, pearlMat); earR.position.set(-0.075, 2.18, 1.12); earR.rotation.set(-0.25, 0, 0.15);
+  const earL = new THREE.Mesh(earGeo, pearlMat); earL.position.set(0.075, 2.08, 1.12); earL.rotation.set(-0.25, 0, -0.15);
+  const earR = new THREE.Mesh(earGeo, pearlMat); earR.position.set(-0.075, 2.08, 1.12); earR.rotation.set(-0.25, 0, 0.15);
   const hornGeo = new THREE.ConeGeometry(0.026, 0.42, 6); hornGeo.rotateX(0.72); hornGeo.translate(0, 0.20, 0.12);
-  const horn = new THREE.Mesh(hornGeo, goldMat); horn.position.set(0, 2.05, 1.25);
+  const horn = new THREE.Mesh(hornGeo, goldMat); horn.position.set(0, 1.96, 1.22);
   neckHeadPivot.add(earL, earR, horn);
 
   const tailPivot = new THREE.Group();
   tailPivot.position.set(0, 1.24, -0.55);
   body.add(tailPivot);
-  const tailGeo = new THREE.ConeGeometry(0.11, 0.85, 6); tailGeo.rotateX(0.35); tailGeo.translate(0, -0.42, -0.2);
+  const tailGeo = buildLoft([[0,0,0,0.06],[0,0.04,-0.18,0.09],[0,-0.25,-0.36,0.11],[0,-0.52,-0.44,0.08],[0,-0.78,-0.40,0.02]], 6);
   tailPivot.add(new THREE.Mesh(tailGeo, rainbowMat));
 
   const uGeo = new THREE.CylinderGeometry(0.1, 0.065, 0.55, 6); uGeo.translate(0, -0.275, 0);
@@ -75,7 +98,7 @@ export function createUnicorn(scene) {
     move: (moveVector, delta) => {
       if (moveVector.lengthSq() > 0.001) {
         group.position.addScaledVector(moveVector, 12.5 * delta);
-        const targetAngle = Math.atan2(-moveVector.x, -moveVector.z);
+        const targetAngle = Math.atan2(moveVector.x, moveVector.z);
         let diff = targetAngle - currentHeading;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;

@@ -138,7 +138,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
             vrMoveDir.normalize();
             hoofTimer += delta;
             if (hoofTimer > 0.28) { hoofTimer = 0; audio.playHoofbeat(); }
-            const targetYaw = unicorn.group.rotation.y;
+            const targetYaw = Math.atan2(-vrMoveDir.x, -vrMoveDir.z);
             let diff = targetYaw - xrGroup.rotation.y;
             while (diff < -Math.PI) diff += Math.PI * 2;
             while (diff > Math.PI) diff -= Math.PI * 2;

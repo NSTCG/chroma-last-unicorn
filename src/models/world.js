@@ -94,7 +94,7 @@ export function createWorld(scene) {
         isl.group.rotation.y = t * 0.15 + isl.seed;
       });
       materials.forEach(m => { if (m.update) m.update(delta); });
-      fogCards.update(delta);
+      fogCards.update(delta, camera);
     }
   };
 }
