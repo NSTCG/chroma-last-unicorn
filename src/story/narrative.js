@@ -37,9 +37,8 @@ export class NarrativeManager {
     audio.init();
     this.act = 0;
     this.game.setAwakened(1.0);
-    const startPos = this.getSlidePoint(1.0), lookAhead = this.getSlidePoint(0.96);
-    this._moveCamera(startPos, lookAhead);
-    if (this.game.vrHud) this.game.vrHud.show('🌈 CHILDHOOD', 'Click / Trigger to Slide!', '', 12000);
+    this._moveCamera(this.getSlidePoint(1.0), this.getSlidePoint(0.96));
+    if (this.game.vrHud) this.game.vrHud.show('🌈 CHILDHOOD', 'Trigger to Slide!');
   }
 
   triggerSlide() {
@@ -47,16 +46,15 @@ export class NarrativeManager {
     this.isSliding = true;
     this.slideProgress = 0;
     audio.playPluck(520, 0.4, 0.6);
-    if (this.game.vrHud) this.game.vrHud.show('HOLD ON!', 'Wheeeeeee!', '', 4000);
+    if (this.game.vrHud) this.game.vrHud.show('HOLD ON!', 'Wheeeeeee!');
   }
 
   updateSlide(delta) {
     if (!this.isSliding) return;
     const p = this.slideProgress;
     this.slideProgress += delta * (p < 0.15 || p > 0.85 ? 0.14 : 0.34);
-    const u = Math.max(0, 1.0 - this.slideProgress), pos = this.getSlidePoint(u), lookAhead = this.getSlidePoint(Math.max(0, u - 0.04));
-
-    this._moveCamera(pos, lookAhead);
+    const u = Math.max(0, 1.0 - this.slideProgress);
+    this._moveCamera(this.getSlidePoint(u), this.getSlidePoint(Math.max(0, u - 0.04)));
     this.game.setAwakened(Math.pow(u, 1.2));
     if (Math.random() < 0.25) audio.playChime(Math.floor(u * 7));
 
@@ -64,10 +62,8 @@ export class NarrativeManager {
       this.isSliding = false;
       this.act = 1;
       this.game.setAwakened(0);
-      const endPos = new window.THREE.Vector3(0, 1.7, 5);
-      const endLook = new window.THREE.Vector3(0, 1.7, -12);
-      this._moveCamera(endPos, endLook);
-      if (this.game.vrHud) this.game.vrHud.show('💔 Where did colors go?', 'Restore 7 Shards!', 'Punch / Click', 9000);
+      this._moveCamera(new window.THREE.Vector3(0, 1.7, 5), new window.THREE.Vector3(0, 1.7, -12));
+      if (this.game.vrHud) this.game.vrHud.show('💔 LOST COLORS', 'Restore 7 Shards!', 'Laser / Punch');
     }
   }
 
@@ -82,11 +78,11 @@ export class NarrativeManager {
     this.act = 3;
     this.game.setAwakened(1.0);
     audio.playAscent();
-    if (this.game.vrHud) this.game.vrHud.show('✨ UNICORN AWAKENS!', 'Wonder returned.', '', 8000);
+    if (this.game.vrHud) this.game.vrHud.show('✨ UNICORN AWAKENS', 'Wonder returned.');
     this.game.unicornState = 'gallop';
     setTimeout(() => {
       this.act = 4;
-      if (this.game.vrHud) this.game.vrHud.show('🌈 ASCENSION TO INFINITY', 'You remembered.', '', 10000);
+      if (this.game.vrHud) this.game.vrHud.show('🌈 ASCENSION', 'You remembered.');
       this.game.unicornState = 'ascend';
     }, 2500);
   }
