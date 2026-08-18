@@ -33,6 +33,7 @@ export function createRenderer() {
   scene.add(ambientLight, hemiLight, sunLight, pointLight);
 
   window.addEventListener('resize', () => {
+    if (renderer.xr.isPresenting) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
