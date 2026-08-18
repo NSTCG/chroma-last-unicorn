@@ -3,14 +3,14 @@ import { audio } from '../audio/synth.js';
 import { getTerrainHeight } from '../models/world.js';
 
 export const SHARDS_DATA = [
-  { name: 'Red', color: 0xff2244, pos: [-48, 0, 18], phrase: 'Fire restored.', action: '✨ Draw art!' },
-  { name: 'Orange', color: 0xff7700, pos: [52, 0, 26], phrase: 'Play restored.', action: '✨ Play games!' },
-  { name: 'Yellow', color: 0xffcc00, pos: [-62, 0, -42], phrase: 'Warmth restored.', action: '✨ Call friends!' },
-  { name: 'Green', color: 0x11cc44, pos: [68, 0, -36], phrase: 'Wonder restored.', action: '✨ Gaze at sky!' },
-  { name: 'Blue', color: 0x00aaff, pos: [-38, 0, 68], phrase: 'Peace restored.', action: '✨ Breathe deep!' },
-  { name: 'Indigo', color: 0x5533ee, pos: [45, 0, 72], phrase: 'Mystery restored.', action: '✨ Read stories!' },
-  { name: 'Violet', color: 0xcc22ee, pos: [0, 0, -82], phrase: 'Dreams restored.', action: '✨ Daydream!' }
-];
+  ['Red', 0xff2244, -48, 18, 'Fire restored.', '✨ Draw art!'],
+  ['Orange', 0xff7700, 52, 26, 'Play restored.', '✨ Play games!'],
+  ['Yellow', 0xffcc00, -62, -42, 'Warmth restored.', '✨ Call friends!'],
+  ['Green', 0x11cc44, 68, -36, 'Wonder restored.', '✨ Gaze at sky!'],
+  ['Blue', 0x00aaff, -38, 68, 'Peace restored.', '✨ Breathe deep!'],
+  ['Indigo', 0x5533ee, 45, 72, 'Mystery restored.', '✨ Read stories!'],
+  ['Violet', 0xcc22ee, 0, -82, 'Dreams restored.', '✨ Daydream!']
+].map(([name, color, x, z, phrase, action], index) => ({ name, color, pos: [x, 0, z], phrase, action, index }));
 
 export function createShardsSystem(scene, onShardCollected, vrHud) {
   const THREE = window.THREE;

@@ -1,9 +1,9 @@
 import { getTerrainHeight } from '../models/world.js';
+import { getHit } from './controls.js';
 
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState) {
   const THREE = window.THREE;
   renderer.xr.enabled = true;
-  try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
 
   const xrGroup = new THREE.Group();
   scene.add(xrGroup);
@@ -24,37 +24,12 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       tempMatrix.identity().extractRotation(controller.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
       raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-
-      const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
-      let hitObj = null;
-      if (hits.length > 0) {
-        let hit = hits[0].object;
-        while (hit && !hit.userData?.data && hit.parent) hit = hit.parent;
-        if (hit?.userData?.data) hitObj = hit;
-      }
-      onSelectObject(hitObj);
+      onSelectObject(getHit(raycaster.intersectObjects(getInteractiveObjects(), true)));
     });
 
     xrGroup.add(controller);
     controllers.push(controller);
   }
-
-  renderer.xr.addEventListener('sessionstart', async () => {
-    const session = renderer.xr.getSession();
-    if (!session) return;
-    if (session.updateTargetFrameRate) {
-      try {
-        const rate72 = session.supportedFrameRates ? (Array.from(session.supportedFrameRates).find(r => Math.round(r) === 72) || 72) : 72;
-        await session.updateTargetFrameRate(rate72);
-      } catch (_) {}
-    }
-    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
-    const applyFov = () => {
-      try { if (session.renderState?.baseLayer) session.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
-    };
-    applyFov();
-    setTimeout(applyFov, 200);
-  });
 
   const startVR = async () => {
     if (!navigator.xr) return alert('WebXR not supported.');
@@ -79,9 +54,6 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     update: (delta) => {
       const session = renderer.xr.getSession();
       if (snapTurnCooldown > 0) snapTurnCooldown -= delta;
-      if (session?.renderState?.baseLayer && session.renderState.baseLayer.fixedFoveation !== 1.0) {
-        try { session.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
-      }
 
       controllers.forEach((ctrl, i) => {
         ctrl.getWorldPosition(currentPos);

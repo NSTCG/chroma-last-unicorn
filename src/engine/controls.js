@@ -1,5 +1,11 @@
 import { getTerrainHeight } from '../models/world.js';
 
+export const getHit = (hits) => {
+  let h = hits[0]?.object;
+  while (h && !h.userData?.data && h.parent) h = h.parent;
+  return h?.userData?.data ? h : null;
+};
+
 export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState) {
   const THREE = window.THREE;
   let isLocked = false, isMouseDown = false, prevMouseX = 0, prevMouseY = 0;
@@ -26,14 +32,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
 
   const tryInteract = () => {
     raycaster.setFromCamera(screenCenter, camera);
-    const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
-    let hitObj = null;
-    if (hits.length > 0) {
-      let hit = hits[0].object;
-      while (hit && !hit.userData?.data && hit.parent) hit = hit.parent;
-      if (hit?.userData?.data) hitObj = hit;
-    }
-    onSelectObject(hitObj);
+    onSelectObject(getHit(raycaster.intersectObjects(getInteractiveObjects(), true)));
   };
 
   domElement.addEventListener('mousedown', (e) => {
