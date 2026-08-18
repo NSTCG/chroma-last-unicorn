@@ -8,26 +8,9 @@ export function createVRHUD(scene, camera) {
   const tex = new THREE.CanvasTexture(canvas);
 
   const phoneGroup = new THREE.Group();
-
-  // Rounded smartphone chassis
-  const shape = new THREE.Shape();
-  const w = 0.13, h = 0.25, r = 0.018, x = -w / 2, y = -h / 2;
-  shape.moveTo(x + r, y);
-  shape.lineTo(x + w - r, y);
-  shape.quadraticCurveTo(x + w, y, x + w, y + r);
-  shape.lineTo(x + w, y + h - r);
-  shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  shape.lineTo(x + r, y + h);
-  shape.quadraticCurveTo(x, y + h, x, y + h - r);
-  shape.lineTo(x, y + r);
-  shape.quadraticCurveTo(x, y, x + r, y);
-
-  const bodyGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.008, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.002, bevelThickness: 0.002 });
-  bodyGeo.center();
-
-  const bodyMesh = new THREE.Mesh(bodyGeo, new THREE.MeshStandardMaterial({ color: 0x151520, roughness: 0.88, metalness: 0.12 }));
-  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.238), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.22, metalness: 0.55, transparent: true, depthTest: false, depthWrite: false }));
-  screenMesh.position.z = 0.0065;
+  const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.245, 0.008), new THREE.MeshStandardMaterial({ color: 0x151520, roughness: 0.88, metalness: 0.12 }));
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.118, 0.236), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.22, metalness: 0.55, transparent: true, depthTest: false, depthWrite: false }));
+  screenMesh.position.z = 0.0045;
   screenMesh.renderOrder = 999;
   phoneGroup.add(bodyMesh, screenMesh);
 
@@ -38,12 +21,11 @@ export function createVRHUD(scene, camera) {
   let tTitle = '', tSub = '', tAct = '', typeTimer = 0, isTyping = false, collectedMask = 0;
   const shardColors = ['#f24', '#f70', '#fc0', '#1c4', '#0af', '#53e', '#c2e'];
 
-  // Calling task flow
   let callState = 'idle', callTimer = 0, callLineIndex = 0, onCallComplete = null;
   const dialogueLines = [
-    'Maya: "Hey! Is that you? I haven\'t heard your voice in so long!"',
-    'Maya: "Remember when we promised to always chase the light together?"',
-    'Maya: "Thank you for calling. Warmth never really left. Go break the shell!"'
+    'Maya: "Hey! Is that you? So great to hear your voice!"',
+    'Maya: "Remember chasing the rainbow light together?"',
+    'Maya: "Warmth never left. Go break that shell!"'
   ];
 
   function redraw() {
@@ -176,6 +158,7 @@ export function createVRHUD(scene, camera) {
 
   return hud;
 }
+
 
 
 
