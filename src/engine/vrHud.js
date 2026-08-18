@@ -23,9 +23,9 @@ export function createVRHUD(scene, camera) {
 
   let callState = 'idle', callTimer = 0, callLineIndex = 0, onCallComplete = null;
   const dialogueLines = [
-    'Maya: "Hey! Is that you? So great to hear your voice!"',
-    'Maya: "Remember chasing the rainbow light together?"',
-    'Maya: "Warmth never left. Go break that shell!"'
+    'Maya: "Hey! So good to hear your voice!"',
+    'Maya: "Remember chasing rainbow light?"',
+    'Maya: "Warmth never left. Break that shell!"'
   ];
 
   function redraw() {
@@ -34,20 +34,14 @@ export function createVRHUD(scene, camera) {
     if (ctx.roundRect) ctx.roundRect(8, 8, 304, 524, 28); else ctx.rect(8, 8, 304, 524);
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(100,200,255,0.45)';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(100,200,255,0.45)'; ctx.lineWidth = 2.5; ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = '13px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '13px sans-serif';
     ctx.fillText('🌈 CHROMA', 24, 38);
-    ctx.textAlign = 'right';
-    ctx.fillText('100% ⚡', 296, 38);
-    ctx.textAlign = 'left';
+    ctx.textAlign = 'right'; ctx.fillText('100% ⚡', 296, 38); ctx.textAlign = 'left';
 
     for (let i = 0; i < 7; i++) {
-      ctx.beginPath();
-      ctx.arc(70 + i * 26, 70, 7, 0, 6.28);
+      ctx.beginPath(); ctx.arc(70 + i * 26, 70, 7, 0, 6.28);
       ctx.fillStyle = (collectedMask & (1 << i)) ? shardColors[i] : '#222230';
       ctx.fill();
     }
@@ -56,25 +50,14 @@ export function createVRHUD(scene, camera) {
     if (ctx.roundRect) ctx.roundRect(18, 100, 284, 400, 20); else ctx.rect(18, 100, 284, 400);
     ctx.fill();
 
-    ctx.fillStyle = '#ff79c6';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(callState === 'talking' || callState === 'ringing' ? 'PHONE CALL' : 'NARRATIVE DISPATCH', 36, 136);
+    ctx.fillStyle = '#ff79c6'; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(callState === 'talking' || callState === 'ringing' ? 'PHONE CALL' : 'DISPATCH', 36, 136);
 
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px sans-serif';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif';
     ctx.fillText(tTitle, 36, 176);
 
-    if (tSub) {
-      ctx.fillStyle = '#a0d8ef';
-      ctx.font = '15px sans-serif';
-      ctx.fillText(tSub, 36, 226);
-    }
-
-    if (tAct) {
-      ctx.fillStyle = '#ffea79';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText(tAct, 36, 282);
-    }
+    if (tSub) { ctx.fillStyle = '#a0d8ef'; ctx.font = '15px sans-serif'; ctx.fillText(tSub, 36, 226); }
+    if (tAct) { ctx.fillStyle = '#ffea79'; ctx.font = 'bold 14px sans-serif'; ctx.fillText(tAct, 36, 282); }
 
     tex.needsUpdate = true;
   }
