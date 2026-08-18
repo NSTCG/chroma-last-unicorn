@@ -150,6 +150,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
           laser.scale.z = hits.length > 0 && hits[0].distance < 30 ? hits[0].distance : 25;
         }
       });
-    }
+    },
+    getRightController: () => controllers[1] || controllers[0]
   };
 }

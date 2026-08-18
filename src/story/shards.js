@@ -17,16 +17,6 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
   const shards = [], shardsGroup = new THREE.Group();
   scene.add(shardsGroup);
 
-  const specBar = document.getElementById('spectrum-bar');
-  if (specBar && !specBar.children.length) {
-    SHARDS_DATA.forEach((d, i) => {
-      const pip = document.createElement('div');
-      pip.className = 'shard-pip';
-      pip.id = `pip-${i}`;
-      pip.style.color = '#' + d.color.toString(16).padStart(6, '0');
-      specBar.appendChild(pip);
-    });
-  }
 
   const shardGeo = new THREE.OctahedronGeometry(1.0, 0);
   const shellGeo = new THREE.IcosahedronGeometry(1.6, 1);
@@ -63,9 +53,8 @@ export function createShardsSystem(scene, onShardCollected, vrHud) {
     audio.playChime(shard.data.color);
     shard.coreMesh.visible = shard.shellMesh.visible = shard.beacon.visible = false;
     shard.orbLight.intensity = 0.4;
-    const pip = document.getElementById(`pip-${shard.data.index || shards.indexOf(shard)}`);
-    if (pip) pip.classList.add('collected');
-    if (vrHud) vrHud.show(`RESTORED: ${shard.data.name}`, shard.data.phrase, shard.data.action, 7000);
+    if (vrHud?.setShardCollected) vrHud.setShardCollected(shard.data.index);
+    if (vrHud) vrHud.show(shard.data.name + ' RESTORED', shard.data.phrase, shard.data.action);
     if (onShardCollected) onShardCollected(shard.data);
     return shard;
   };

@@ -33,7 +33,7 @@ export function createWorld(scene) {
       vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);
       vec3 groundColor=gF*mix(gi,sun,c*0.42+0.58);
       vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);
-      gl_FragColor.rgb=mix(groundColor,fogCol,smoothstep(45.0,210.0,length(vWPos-cameraPosition))*0.95);
+      gl_FragColor.rgb=mix(groundColor,fogCol,smoothstep(32.0,160.0,length(vWPos-cameraPosition))*0.98);
       gl_FragColor.a=1.0;`);
   };
 

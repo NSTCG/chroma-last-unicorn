@@ -97,7 +97,7 @@ export function createGrassField(scene, count = 46000) {
         float dist=length(vVP);
         col=mix(col,groundLit,smoothstep(25.0,95.0,dist)*0.96);
         vec3 fogCol=mix(vec3(0.05,0.05,0.08),vec3(0.26,0.15,0.24),uAwakened);
-        col=mix(col,fogCol,smoothstep(45.0,195.0,dist)*0.95);
+        col=mix(col,fogCol,smoothstep(32.0,160.0,dist)*0.98);
         gl_FragColor=vec4(col,1.0);
       }`,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.shadowmap, uniforms]),
