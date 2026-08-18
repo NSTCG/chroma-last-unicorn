@@ -1,21 +1,61 @@
 import { getTerrainHeight } from './world.js';
 
+function createDenseGrassTexture(THREE) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  const blades = [
+    [64, 20, 245, 0],
+    [46, 16, 218, -16],
+    [82, 16, 222, 16],
+    [32, 14, 190, -28],
+    [96, 14, 195, 28],
+    [18, 12, 160, -42],
+    [110, 12, 165, 42],
+    [52, 12, 140, -8],
+    [76, 12, 145, 10]
+  ];
+
+  blades.forEach(([x, w, h, bend]) => {
+    ctx.beginPath();
+    ctx.moveTo(x - w * 0.5, 256);
+    ctx.quadraticCurveTo(x + bend * 0.4, 256 - h * 0.55, x + bend, 256 - h);
+    ctx.quadraticCurveTo(x + bend * 0.6, 256 - h * 0.55, x + w * 0.5, 256);
+    ctx.closePath();
+
+    const g = ctx.createLinearGradient(0, 256, 0, 256 - h);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.65, 'rgba(240,255,240,0.95)');
+    g.addColorStop(1, 'rgba(200,255,200,0.85)');
+    ctx.fillStyle = g;
+    ctx.fill();
+  });
+
+  return new THREE.CanvasTexture(canvas);
+}
+
 export function createGrassField(scene, count = 58000) {
   const THREE = window.THREE;
-  const bladeGeo = new THREE.PlaneGeometry(0.32, 1.85, 1, 2);
-  bladeGeo.translate(0, 0.925, 0);
+  const grassTex = createDenseGrassTexture(THREE);
+  const bladeGeo = new THREE.PlaneGeometry(0.72, 1.95, 1, 2);
+  bladeGeo.translate(0, 0.975, 0);
 
   const uniforms = {
     uTime: { value: 0 },
-    uAwakened: { value: 0 }
+    uAwakened: { value: 0 },
+    uGrassMap: { value: grassTex }
   };
 
   const mat = new THREE.ShaderMaterial({
-    vertexShader: `uniform mat4 directionalShadowMatrix[1];uniform float uTime;varying vec3 vWP,vVP;varying float vH;varying vec4 vShadowCoord;void main(){vH=uv.y;vec4 wp=instanceMatrix*vec4(position,1.0);float t=uTime;float w=(sin(wp.x*0.12+wp.z*0.09+t*1.5)+sin(wp.x*0.30-wp.z*0.22+t*2.8)*0.45+cos(wp.z*0.50+wp.x*0.35+t*4.0)*0.18)*0.42;float b=pow(vH,1.8)*w;wp.x+=b;wp.z+=b*0.75;wp.y-=abs(b)*0.22*vH;vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(wp.xyz,1.0);vVP=-mv.xyz;vShadowCoord=directionalShadowMatrix[0]*wp;gl_Position=projectionMatrix*mv;}`,
+    vertexShader: `uniform mat4 directionalShadowMatrix[1];uniform float uTime;varying vec2 vUv;varying vec3 vWP,vVP;varying float vH;varying vec4 vShadowCoord;void main(){vUv=uv;vH=uv.y;vec4 wp=instanceMatrix*vec4(position,1.0);float t=uTime;float w=(sin(wp.x*0.12+wp.z*0.09+t*1.5)+sin(wp.x*0.30-wp.z*0.22+t*2.8)*0.45+cos(wp.z*0.50+wp.x*0.35+t*4.0)*0.18)*0.42;float b=pow(vH,1.8)*w;wp.x+=b;wp.z+=b*0.75;wp.y-=abs(b)*0.22*vH;vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(wp.xyz,1.0);vVP=-mv.xyz;vShadowCoord=directionalShadowMatrix[0]*wp;gl_Position=projectionMatrix*mv;}`,
     fragmentShader: `#include <packing>
-      uniform sampler2D directionalShadowMap[1];uniform float uTime,uAwakened;varying vec3 vWP,vVP;varying float vH;varying vec4 vShadowCoord;
+      uniform sampler2D directionalShadowMap[1];uniform sampler2D uGrassMap;uniform float uTime,uAwakened;varying vec2 vUv;varying vec3 vWP,vVP;varying float vH;varying vec4 vShadowCoord;
       float cloudN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);float n1=sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5,n2=sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5;return smoothstep(0.2,0.85,n1*0.65+n2*0.35);}
       void main(){
+        vec4 tex=texture2D(uGrassMap,vUv);
+        if(tex.a<0.18)discard;
         float c=cloudN(vWP.xz,uTime);
         vec3 gA=mix(vec3(0.04,0.20,0.06),vec3(0.16,0.38,0.14),c),gG=mix(vec3(0.08,0.08,0.10),vec3(0.18,0.18,0.22),c),gF=mix(gG,gA,uAwakened);
         vec3 gi=mix(vec3(0.55,0.58,0.70),vec3(0.72,0.54,0.70),uAwakened)*1.35,sun=vec3(1.22,1.14,1.02);
@@ -28,10 +68,10 @@ export function createGrassField(scene, count = 58000) {
         vec3 tipCol=mix(mix(vec3(0.072,0.396,0.126),vec3(0.196,0.672,0.266),bVar),mix(vec3(0.238,0.816,0.323),vec3(0.47,1.3,0.514),bVar),c);
         float sFac=shadowOcc*(c*0.42+0.58);
         vec3 tipFinal=mix(mix(vec3(0.14,0.14,0.18),vec3(0.28,0.28,0.34),c),tipCol,uAwakened)*mix(gi,sun,sFac);
-        vec3 col=mix(groundLit,tipFinal,pow(vH,0.85));
+        vec3 col=mix(groundLit,tipFinal,pow(vH,0.85))*(tex.rgb*0.35+0.65);
         float dist=length(vVP);
         col=mix(col,groundLit,smoothstep(35.0,140.0,dist)*0.96);
-        gl_FragColor=vec4(col,1.0-smoothstep(110.0,220.0,dist)*0.95);
+        gl_FragColor=vec4(col,(1.0-smoothstep(110.0,220.0,dist)*0.95)*tex.a);
       }`,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.shadowmap, uniforms]),
     side: THREE.DoubleSide, transparent: true, depthWrite: true

@@ -6,7 +6,7 @@ export const getHit = (hits) => {
   return h?.userData?.data ? h : null;
 };
 
-export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState) {
+export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState, renderer) {
   const THREE = window.THREE;
   let isLocked = false, isMouseDown = false, prevMouseX = 0, prevMouseY = 0;
   const keys = {}, moveSpeed = 8.5;
@@ -16,6 +16,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   const crosshair = document.getElementById('crosshair');
 
   const onMouseMove = (mx, my) => {
+    if (renderer?.xr?.isPresenting) return;
     euler.setFromQuaternion(camera.quaternion);
     euler.y -= mx * 0.0022;
     euler.x = Math.max(-1.52, Math.min(1.52, euler.x - my * 0.0022));
@@ -23,6 +24,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   };
 
   document.addEventListener('mousemove', (e) => {
+    if (renderer?.xr?.isPresenting) return;
     if (isLocked) onMouseMove(e.movementX || 0, e.movementY || 0);
     else if (isMouseDown) {
       onMouseMove(e.clientX - prevMouseX, e.clientY - prevMouseY);
@@ -31,11 +33,13 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   });
 
   const tryInteract = () => {
+    if (renderer?.xr?.isPresenting) return;
     raycaster.setFromCamera(screenCenter, camera);
     onSelectObject(getHit(raycaster.intersectObjects(getInteractiveObjects(), true)));
   };
 
   domElement.addEventListener('mousedown', (e) => {
+    if (renderer?.xr?.isPresenting) return;
     isMouseDown = true;
     prevMouseX = e.clientX; prevMouseY = e.clientY;
     if (!isLocked && domElement.requestPointerLock) {
@@ -48,6 +52,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === domElement; });
 
   window.addEventListener('keydown', (e) => {
+    if (renderer?.xr?.isPresenting) return;
     keys[e.code] = true;
     if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') tryInteract();
   });
@@ -58,6 +63,7 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   return {
     isLocked: () => isLocked,
     update: (delta) => {
+      if (renderer?.xr?.isPresenting) return;
       raycaster.setFromCamera(screenCenter, camera);
       const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
       if (crosshair) crosshair.classList.toggle('active', hits.length > 0 && hits[0].distance < 30);

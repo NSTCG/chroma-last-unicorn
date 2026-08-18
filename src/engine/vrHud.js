@@ -6,17 +6,22 @@ export function createVRHUD(scene, camera) {
 
   const texture = new THREE.CanvasTexture(canvas);
   const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false, side: THREE.DoubleSide });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.7), mat);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.58), mat);
   mesh.renderOrder = 999;
-  mesh.position.set(0, 0, -2.0);
-  camera.add(mesh);
+  mesh.visible = false;
+  scene.add(mesh);
 
   let curTitle = '', curSub = '', curAct = '', opacity = 0, targetOp = 0, timer = null;
+  const camPos = new THREE.Vector3(), camDir = new THREE.Vector3();
 
   function draw() {
     ctx.clearRect(0, 0, 384, 140);
-    if (opacity <= 0.01) { texture.needsUpdate = true; return; }
-
+    if (opacity <= 0.01) {
+      mesh.visible = false;
+      texture.needsUpdate = true;
+      return;
+    }
+    mesh.visible = true;
     ctx.globalAlpha = opacity * 0.9;
     ctx.fillStyle = '#0a0d18';
     ctx.fillRect(8, 8, 368, 124);
@@ -55,6 +60,13 @@ export function createVRHUD(scene, camera) {
       if (Math.abs(opacity - targetOp) > 0.01) {
         opacity += (targetOp - opacity) * delta * 5.0;
         draw();
+      }
+      if (mesh.visible) {
+        camera.getWorldPosition(camPos);
+        camera.getWorldDirection(camDir);
+        mesh.position.copy(camPos).addScaledVector(camDir, 2.0);
+        mesh.position.y -= 0.35;
+        mesh.quaternion.copy(camera.quaternion);
       }
     }
   };

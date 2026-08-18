@@ -74,7 +74,8 @@ class ChromaGame {
 
     this.pcControls = setupPCControls(
       this.camera, this.renderer.domElement, getInteractive, onSelect,
-      () => ({ isMounted: this.isMounted, unicorn: this.unicorn })
+      () => ({ isMounted: this.isMounted, unicorn: this.unicorn }),
+      this.renderer
     );
 
     this.xr = setupXR(
