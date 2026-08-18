@@ -9,9 +9,9 @@ export class NarrativeManager {
     this.slideProgress = 0;
   }
 
-  getSlidePoint(u) {
+  getSlidePoint(u, target) {
     const cu = Math.max(0, Math.min(1, u)), a = cu * 6.9 + 0.5, r = 16 + Math.sin(cu * 6.28) * 8;
-    return new window.THREE.Vector3(Math.cos(a) * r, 3.5 + cu * 38.0 + 1.2, -12 + Math.sin(a) * r);
+    return (target || new window.THREE.Vector3()).set(Math.cos(a) * r, 4.7 + cu * 38.0, -12 + Math.sin(a) * r);
   }
 
   startExperience() {

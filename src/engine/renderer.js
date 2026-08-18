@@ -42,7 +42,7 @@ export function createRenderer() {
   const greyHemiSky = new THREE.Color(0x9aa4ca), atmoHemiSky = new THREE.Color(0xdca0cb);
 
   return {
-    scene, camera, renderer, ambientLight, hemiLight, sunLight, pointLight,
+    scene, camera, renderer,
     setAwakened: (val) => {
       ambientLight.color.lerpColors(greyAmb, atmoAmb, val);
       hemiLight.color.lerpColors(greyHemiSky, atmoHemiSky, val);

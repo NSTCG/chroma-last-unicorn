@@ -2,15 +2,18 @@ export function createParticleSystem(scene, count = 1500) {
   const THREE = window.THREE;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(count * 3), col = new Float32Array(count * 3), seed = new Float32Array(count * 2);
-  const colors = [0xff4466, 0xff9922, 0xffea33, 0x33ee77, 0x00d4ff, 0x7755ff, 0xee44ff];
+  const rgb = [
+    [1, 0.27, 0.4], [1, 0.6, 0.13], [1, 0.92, 0.2],
+    [0.2, 0.93, 0.47], [0, 0.83, 1], [0.47, 0.33, 1], [0.93, 0.27, 1]
+  ];
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3, r = 2.0 + Math.sqrt(Math.random()) * 92.0, th = Math.random() * Math.PI * 2;
     pos[i3] = Math.cos(th) * r;
     pos[i3 + 1] = 0.4 + Math.random() * 14.0;
     pos[i3 + 2] = Math.sin(th) * r;
-    const c = new THREE.Color(colors[i % 7]);
-    col[i3] = c.r; col[i3 + 1] = c.g; col[i3 + 2] = c.b;
+    const c = rgb[i % 7];
+    col[i3] = c[0]; col[i3 + 1] = c[1]; col[i3 + 2] = c[2];
     seed[i * 2] = Math.random() * 6.28;
     seed[i * 2 + 1] = 0.6 + Math.random() * 0.8;
   }
