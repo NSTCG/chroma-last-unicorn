@@ -21,11 +21,11 @@ export function createVRHUD(scene, camera) {
   let tTitle = '', tSub = '', tAct = '', typeTimer = 0, isTyping = false, collectedMask = 0;
   const shardColors = ['#f24', '#f70', '#fc0', '#1c4', '#0af', '#53e', '#c2e'];
 
-  let callState = 'idle', callTimer = 0, callLineIndex = 0, onCallComplete = null;
+  let callState = 'idle', callTimer = 0, onCallComplete = null;
   const dialogueLines = [
-    'Maya: "Hey! So good to hear your voice!"',
-    'Maya: "Remember chasing rainbow light?"',
-    'Maya: "Warmth never left. Break that shell!"'
+    'Maya: "Hey! Great to hear you!"',
+    'Maya: "Remember chasing rainbows?"',
+    'Maya: "Warmth never left. Shatter shell!"'
   ];
 
   function redraw() {
@@ -33,7 +33,6 @@ export function createVRHUD(scene, camera) {
     ctx.fillStyle = '#0a0a14';
     if (ctx.roundRect) ctx.roundRect(8, 8, 304, 524, 28); else ctx.rect(8, 8, 304, 524);
     ctx.fill();
-
     ctx.strokeStyle = 'rgba(100,200,255,0.45)'; ctx.lineWidth = 2.5; ctx.stroke();
 
     ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '13px sans-serif';
@@ -51,7 +50,7 @@ export function createVRHUD(scene, camera) {
     ctx.fill();
 
     ctx.fillStyle = '#ff79c6'; ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(callState === 'talking' || callState === 'ringing' ? 'PHONE CALL' : 'DISPATCH', 36, 136);
+    ctx.fillText(callState.startsWith('talk') || callState === 'ringing' ? 'PHONE CALL' : 'DISPATCH', 36, 136);
 
     ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif';
     ctx.fillText(tTitle, 36, 176);

@@ -20,9 +20,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     const s = renderer.xr.getSession();
     if (!s?.inputSources) return;
     for (const src of s.inputSources) {
-      if (hand === 'both' || src.handedness === hand) {
-        src.gamepad?.hapticActuators?.[0]?.pulse?.(intensity, duration);
-      }
+      if (hand === 'both' || src.handedness === hand) src.gamepad?.hapticActuators?.[0]?.pulse?.(intensity, duration);
     }
   };
 
@@ -47,18 +45,6 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
 
   renderer.xr.addEventListener('sessionstart', async () => {
     try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
-    const s = renderer.xr.getSession();
-    if (s) {
-      if (s.updateTargetFrameRate) {
-        try {
-          const r = s.supportedFrameRates ? [...s.supportedFrameRates] : [];
-          await s.updateTargetFrameRate(r.length ? r.reduce((p, c) => Math.abs(c - 75) < Math.abs(p - 75) ? c : p, r[0]) : 75);
-        } catch (_) {}
-      }
-      if (s.renderState?.baseLayer) {
-        try { s.renderState.baseLayer.fixedFoveation = 1.0; } catch (_) {}
-      }
-    }
   });
 
   const startVR = async () => {
@@ -73,14 +59,13 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       camera.quaternion.identity();
       camera.updateMatrixWorld(true);
       await renderer.xr.setSession(session);
-      try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1.0); } catch (_) {}
     } catch (err) {
-      console.error('Failed to start VR session:', err);
-      alert('Could not start VR session: ' + (err?.message || err));
+      console.error(err);
+      alert('Could not start VR: ' + (err?.message || err));
     }
   };
 
-  let snapTurnCooldown = 0, footTimer = 0, hoofTimer = 0, wasMountedMove = false;
+  let snapTurnCooldown = 0, footTimer = 0, hoofTimer = 0;
   const forwardVec = new THREE.Vector3(), rightVec = new THREE.Vector3(), currentPos = new THREE.Vector3(), vrMoveDir = new THREE.Vector3();
 
   return {
@@ -95,9 +80,8 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       controllers.forEach((ctrl, i) => {
         ctrl.getWorldPosition(currentPos);
         const dist = currentPos.distanceTo(lastPositions[i]);
-        const speed = delta > 0 ? dist / delta : 0;
         lastPositions[i].copy(currentPos);
-        if (onPunchCheck && speed > 0.4) onPunchCheck(currentPos, speed);
+        if (onPunchCheck && delta > 0 && (dist / delta) > 0.4) onPunchCheck(currentPos, dist / delta);
       });
 
       const isMounted = getUnicornState ? getUnicornState().isMounted : false;
@@ -127,8 +111,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
             ax = Math.abs(axes[2]) > 0.08 ? axes[2] : (Math.abs(axes[0]) > 0.08 ? axes[0] : 0);
             ay = Math.abs(axes[3]) > 0.08 ? axes[3] : (Math.abs(axes[1]) > 0.08 ? axes[1] : 0);
           } else if (axes.length >= 2) {
-            ax = axes[0];
-            ay = axes[1];
+            ax = axes[0]; ay = axes[1];
           }
 
           if (source.handedness === 'left') {

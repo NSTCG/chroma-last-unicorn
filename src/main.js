@@ -27,36 +27,23 @@ class ChromaGame {
 
     this.unicornState = 'idle';
     this.isMounted = false;
-
     this.narrative = new NarrativeManager(this);
 
     const pulseHaptics = (h, i, d) => this.xr?.pulseHaptics?.(h, i, d);
     this.shards = createShardsSystem(this.scene, () => this.narrative.onShardCollected(), this.vrHud, pulseHaptics);
 
     const getInteractive = () => [...this.shards.getInteractiveMeshes(), ...this.unicorn.getInteractiveMeshes()];
-
     const onSelect = (mesh) => {
       if (this.narrative.act === 0) return this.narrative.triggerSlide();
       if (mesh?.userData?.isUnicorn || (this.isMounted && !mesh)) return this.toggleMount();
       this.shards.collect(mesh);
     };
 
-    this.pcControls = setupPCControls(
-      this.camera, this.renderer.domElement, getInteractive, onSelect,
-      () => ({ isMounted: this.isMounted, unicorn: this.unicorn }),
-      this.renderer, this.vrHud
-    );
+    const getUState = () => ({ isMounted: this.isMounted, unicorn: this.unicorn });
+    this.pcControls = setupPCControls(this.camera, this.renderer.domElement, getInteractive, onSelect, getUState, this.renderer, this.vrHud);
+    this.xr = setupXR(this.renderer, this.scene, this.camera, getInteractive, onSelect, (pos, speed) => this.shards.checkVRPunch(pos, speed), () => { if (this.narrative.act === 0) this.narrative.triggerSlide(); }, getUState, this.vrHud);
 
-    this.xr = setupXR(
-      this.renderer, this.scene, this.camera, getInteractive, onSelect,
-      (pos, speed) => this.shards.checkVRPunch(pos, speed),
-      () => { if (this.narrative.act === 0) this.narrative.triggerSlide(); },
-      () => ({ isMounted: this.isMounted, unicorn: this.unicorn }),
-      this.vrHud
-    );
-
-    if (this.vrHud?.setHaptics) this.vrHud.setHaptics(pulseHaptics);
-
+    this.vrHud?.setHaptics?.(pulseHaptics);
     this.initUI();
     this.startLoop();
     setupDevStudio(this);
@@ -68,22 +55,16 @@ class ChromaGame {
     if (this.isMounted) {
       this.vrHud.show('🦄 MOUNTED UNICORN', 'WASD / Stick to ride, Click to dismount');
     } else {
-      const ux = this.unicorn.group.position.x - 1.8;
-      const uz = this.unicorn.group.position.z + 1.2;
-      if (this.renderer.xr.isPresenting) {
-        this.xr.xrGroup.position.set(ux, this.xr.xrGroup.position.y, uz);
-      } else {
-        this.camera.position.x = ux;
-        this.camera.position.z = uz;
-      }
+      const ux = this.unicorn.group.position.x - 1.8, uz = this.unicorn.group.position.z + 1.2;
+      if (this.renderer.xr.isPresenting) this.xr.xrGroup.position.set(ux, this.xr.xrGroup.position.y, uz);
+      else { this.camera.position.x = ux; this.camera.position.z = uz; }
       this.unicorn.update(0, 'idle');
     }
   }
 
   setAwakened(val) {
     this.engine.setAwakened(val);
-    this.sky.uniforms.uAwakened.value = val;
-    this.particles.uniforms.uAwakened.value = val;
+    this.sky.uniforms.uAwakened.value = this.particles.uniforms.uAwakened.value = val;
     this.world.setAwakened(val);
     this.grass.setAwakened(val);
     this.unicorn.setAwakened(val);
@@ -108,7 +89,6 @@ class ChromaGame {
 
   startLoop() {
     const clock = new window.THREE.Clock();
-
     this.renderer.setAnimationLoop(() => {
       const delta = Math.min(clock.getDelta(), 0.1);
       this.sky.update(delta);

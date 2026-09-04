@@ -6,52 +6,27 @@ export function createFogCards(scene, count = 48) {
   const group = new THREE.Group();
   scene.add(group);
 
-  const uniforms = {
-    uTime: { value: 0 },
-    uAwakened: { value: 0 },
-    uFogDensity: { value: 0.55 }
-  };
+  const uniforms = { uTime: { value: 0 }, uAwakened: { value: 0 }, uFogDensity: { value: 0.55 } };
 
   const mat = new THREE.ShaderMaterial({
     vertexShader: `varying vec2 vUv;varying vec3 vWP,vVP;void main(){vUv=uv;vec4 wp=modelMatrix*vec4(0.0,0.0,0.0,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(0.0,0.0,0.0,1.0);vec2 sz=vec2(length(modelMatrix[0].xyz),length(modelMatrix[1].xyz));mv.xy+=position.xy*sz;vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
     fragmentShader: `precision highp float;uniform float uTime,uAwakened,uFogDensity;varying vec2 vUv;varying vec3 vWP,vVP;void main(){float d=length(vVP),pF=smoothstep(4.0,16.0,d),hF=1.0-smoothstep(150.0,260.0,d);float bFade=smoothstep(0.0,0.42,vUv.y),tFade=smoothstep(1.0,0.60,vUv.y),edge=pow(sin(vUv.x*3.1416),1.4)*bFade*tFade;float t=uTime*0.25,wisp=sin(vWP.x*0.06+vWP.z*0.05+t*0.8)*cos(vWP.z*0.08-vWP.x*0.04-t*0.6)*0.5+0.5;vec3 col=mix(vec3(0.55,0.58,0.68),vec3(0.72,0.64,0.78)+vec3(0.04,0.04,0.08)*sin(t+vWP.x*0.1),uAwakened);gl_FragColor=vec4(col,edge*(0.24+wisp*0.28)*pF*hF*uFogDensity);}`,
-    uniforms,
-    transparent: true,
-    depthTest: true,
-    depthWrite: false,
-    side: THREE.DoubleSide
+    uniforms, transparent: true, depthTest: true, depthWrite: false, side: THREE.DoubleSide
   });
 
   const cards = [];
   const planeGeo = new THREE.PlaneGeometry(1, 1);
-  planeGeo.translate(0, 0.5, 0); // Anchor pivot at base
+  planeGeo.translate(0, 0.5, 0);
   group.renderOrder = 20;
 
   for (let i = 0; i < count; i++) {
-    const tier = i % 3;
-    const a = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
-    let r, w, h, yOff;
-    if (tier === 0) {
-      r = 14.0 + Math.random() * 38.0;
-      w = 18.0 + Math.random() * 12.0;
-      h = 7.0 + Math.random() * 5.0;
-      yOff = 0.1;
-    } else if (tier === 1) {
-      r = 55.0 + Math.random() * 55.0;
-      w = 38.0 + Math.random() * 20.0;
-      h = 16.0 + Math.random() * 8.0;
-      yOff = 0.4 + Math.random() * 2.5;
-    } else {
-      r = 110.0 + Math.random() * 95.0;
-      w = 60.0 + Math.random() * 35.0;
-      h = 24.0 + Math.random() * 14.0;
-      yOff = 1.0 + Math.random() * 6.0;
-    }
+    const tier = i % 3, a = (i / count) * 6.28318 + (Math.random() - 0.5) * 0.45;
+    const r = tier === 0 ? 14 + Math.random() * 38 : (tier === 1 ? 55 + Math.random() * 55 : 110 + Math.random() * 95);
+    const w = tier === 0 ? 18 + Math.random() * 12 : (tier === 1 ? 38 + Math.random() * 20 : 60 + Math.random() * 35);
+    const h = tier === 0 ? 7 + Math.random() * 5 : (tier === 1 ? 16 + Math.random() * 8 : 24 + Math.random() * 14);
+    const yOff = tier === 0 ? 0.1 : (tier === 1 ? 0.4 + Math.random() * 2.5 : 1.0 + Math.random() * 6.0);
 
-    const x = Math.cos(a) * r, z = -12 + Math.sin(a) * r;
-    const ty = getTerrainHeight(x, z);
-    const y = ty + yOff;
-
+    const x = Math.cos(a) * r, z = -12 + Math.sin(a) * r, y = getTerrainHeight(x, z) + yOff;
     const mesh = new THREE.Mesh(planeGeo, mat);
     mesh.position.set(x, y, z);
     mesh.scale.set(w, h, 1.0);

@@ -7,7 +7,7 @@ export function createUnicorn(scene) {
   const uniforms = { uTime: { value: 0 }, uColorAwakened: { value: 0 } };
 
   const vs = `varying vec3 vN,vWP,vV;void main(){vN=normalize(normalMatrix*normal);vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}`;
-  const fs = `precision highp float;uniform float uTime,uMat;varying vec3 vN,vWP,vV;vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(t)+vec3(0,0.33,0.67)));}void main(){vec3 N=normalize(gl_FrontFacing?vN:-vN);vec3 V=normalize(vV);vec3 L=normalize(vec3(0.5,1.0,0.4));float d=max(dot(N,L),0.0),toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6,spec=pow(max(dot(reflect(-L,N),V),0.0),20.0),fr=pow(1.0-max(dot(N,V),0.0),2.2),outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));vec3 pearl=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45,gold=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65,hair=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9),base=uMat>1.5?hair:(uMat>0.5?gold:pearl);gl_FragColor=vec4(mix(base+spec*0.45,vec3(0.04,0.02,0.07),outl*0.95),1.0);}`;
+  const fs = `precision highp float;uniform float uTime,uMat;varying vec3 vN,vWP,vV;vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.28318*(vec3(t)+vec3(0,0.33,0.67)));}void main(){vec3 N=normalize(gl_FrontFacing?vN:-vN),V=normalize(vV),L=normalize(vec3(0.5,1.0,0.4));float d=max(dot(N,L),0.0),toon=smoothstep(0.02,0.12,d)*0.4+smoothstep(0.38,0.48,d)*0.6,spec=pow(max(dot(reflect(-L,N),V),0.0),20.0),fr=pow(1.0-max(dot(N,V),0.0),2.2),outl=smoothstep(0.54,0.66,1.0-max(dot(N,V),0.0));vec3 p=vec3(0.96,0.97,1.0)*(toon*0.65+0.35)+rb(vWP.y*0.3+uTime*0.3)*fr*0.45,g=vec3(1.0,0.84,0.25)*(toon*0.65+0.35)+rb(uTime*0.4+vWP.y*0.4)*fr*0.65,h=rb(vWP.y*1.4+vWP.z*1.2+uTime*0.6)*(toon*0.75+0.25)+spec*vec3(0.9),b=uMat>1.5?h:(uMat>0.5?g:p);gl_FragColor=vec4(mix(b+spec*0.45,vec3(0.04,0.02,0.07),outl*0.95),1.0);}`;
 
   const makeMat = (uMat) => new THREE.ShaderMaterial({
     vertexShader: vs, fragmentShader: fs,
@@ -19,12 +19,11 @@ export function createUnicorn(scene) {
   const body = new THREE.Group();
   group.add(body);
 
-  const chestGeo = new THREE.SphereGeometry(0.38, 8, 8); chestGeo.scale(0.9, 1.15, 1.15);
-  const barrelGeo = new THREE.CylinderGeometry(0.36, 0.26, 0.90, 8); barrelGeo.rotateX(Math.PI / 2); barrelGeo.scale(0.9, 1.15, 1.0);
-  const rumpGeo = new THREE.SphereGeometry(0.27, 8, 8); rumpGeo.scale(0.9, 1.08, 1.08);
-  const chest = new THREE.Mesh(chestGeo, pearlMat); chest.position.set(0, 1.30, 0.44);
-  const barrel = new THREE.Mesh(barrelGeo, pearlMat); barrel.position.set(0, 1.25, 0);
-  const rump = new THREE.Mesh(rumpGeo, pearlMat); rump.position.set(0, 1.20, -0.45);
+  const cGeo = new THREE.SphereGeometry(0.38, 8, 8); cGeo.scale(0.9, 1.15, 1.15);
+  const bGeo = new THREE.CylinderGeometry(0.36, 0.26, 0.90, 8); bGeo.rotateX(1.5708); bGeo.scale(0.9, 1.15, 1.0);
+  const rGeo = new THREE.SphereGeometry(0.27, 8, 8); rGeo.scale(0.9, 1.08, 1.08);
+  const chest = new THREE.Mesh(cGeo, pearlMat), barrel = new THREE.Mesh(bGeo, pearlMat), rump = new THREE.Mesh(rGeo, pearlMat);
+  chest.position.set(0, 1.30, 0.44); barrel.position.set(0, 1.25, 0); rump.position.set(0, 1.20, -0.45);
   body.add(chest, barrel, rump);
 
   const neckHeadPivot = new THREE.Group();
@@ -34,18 +33,17 @@ export function createUnicorn(scene) {
     const verts = [], inds = [];
     rings.forEach(([rx, ry, rz, rad]) => {
       for (let i = 0; i < segs; i++) {
-        const a = (i / segs) * Math.PI * 2;
+        const a = (i / segs) * 6.28318;
         verts.push(rx + Math.cos(a) * rad, ry + Math.sin(a) * rad, rz);
       }
     });
-    const tipIdx = verts.length / 3;
     if (tip) verts.push(...tip);
     for (let r = 0; r < rings.length - 1; r++) {
       const r0 = r * segs, r1 = (r + 1) * segs;
       for (let i = 0; i < segs; i++) inds.push(r0 + i, r0 + (i + 1) % segs, r1 + (i + 1) % segs, r0 + i, r1 + (i + 1) % segs, r1 + i);
     }
     if (tip) {
-      const lr = (rings.length - 1) * segs;
+      const lr = (rings.length - 1) * segs, tipIdx = (verts.length - 3) / 3;
       for (let i = 0; i < segs; i++) inds.push(lr + i, lr + (i + 1) % segs, tipIdx);
     }
     const geo = new THREE.BufferGeometry();
@@ -60,8 +58,9 @@ export function createUnicorn(scene) {
   neckHeadPivot.add(new THREE.Mesh(neckGeo, pearlMat), new THREE.Mesh(maneGeo, rainbowMat));
 
   const earGeo = new THREE.ConeGeometry(0.04, 0.20, 5);
-  const earL = new THREE.Mesh(earGeo, pearlMat); earL.position.set(0.075, 2.08, 1.12); earL.rotation.set(-0.25, 0, -0.15);
-  const earR = new THREE.Mesh(earGeo, pearlMat); earR.position.set(-0.075, 2.08, 1.12); earR.rotation.set(-0.25, 0, 0.15);
+  const earL = new THREE.Mesh(earGeo, pearlMat), earR = new THREE.Mesh(earGeo, pearlMat);
+  earL.position.set(0.075, 2.08, 1.12); earL.rotation.set(-0.25, 0, -0.15);
+  earR.position.set(-0.075, 2.08, 1.12); earR.rotation.set(-0.25, 0, 0.15);
   const hornGeo = new THREE.ConeGeometry(0.026, 0.42, 6); hornGeo.rotateX(0.72); hornGeo.translate(0, 0.20, 0.12);
   const horn = new THREE.Mesh(hornGeo, goldMat); horn.position.set(0, 1.96, 1.22);
   neckHeadPivot.add(earL, earR, horn);
@@ -76,8 +75,8 @@ export function createUnicorn(scene) {
   const lGeo = new THREE.CylinderGeometry(0.055, 0.045, 0.52, 6); lGeo.translate(0, -0.26, 0);
   const hoofGeo = new THREE.CylinderGeometry(0.045, 0.075, 0.12, 6); hoofGeo.translate(0, -0.57, 0.012);
 
-  const legs = [[0.18,0.42,true],[-0.18,0.42,true],[0.15,-0.45,false],[-0.15,-0.45,false]].map(([x, z, isFront]) => {
-    const hip = new THREE.Group(); hip.position.set(x, isFront ? 1.18 : 1.10, z); body.add(hip);
+  const legs = [[0.18,0.42,1.18],[-0.18,0.42,1.18],[0.15,-0.45,1.1],[-0.15,-0.45,1.1]].map(([x, z, y]) => {
+    const hip = new THREE.Group(); hip.position.set(x, y, z); body.add(hip);
     hip.add(new THREE.Mesh(uGeo, pearlMat));
     const knee = new THREE.Group(); knee.position.set(0, -0.55, 0); hip.add(knee);
     knee.add(new THREE.Mesh(lGeo, pearlMat), new THREE.Mesh(hoofGeo, goldMat));
@@ -135,9 +134,7 @@ export function createUnicorn(scene) {
         if (state === 'ascend') {
           flightTimer += delta * 0.4;
           const rad = 16 + Math.sin(flightTimer * 1.2) * 4;
-          group.position.x = Math.sin(flightTimer * 2.2) * rad;
-          group.position.z = -12 + Math.cos(flightTimer * 2.2) * rad;
-          group.position.y = 2.8 + Math.sin(flightTimer * 4.0) * 0.8 + flightTimer * 3.2;
+          group.position.set(Math.sin(flightTimer * 2.2) * rad, 2.8 + Math.sin(flightTimer * 4.0) * 0.8 + flightTimer * 3.2, -12 + Math.cos(flightTimer * 2.2) * rad);
           group.rotation.y = flightTimer * 2.2 + Math.PI / 2;
         }
       }

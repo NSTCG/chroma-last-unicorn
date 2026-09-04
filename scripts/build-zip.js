@@ -87,8 +87,8 @@ async function runBuildPipeline() {
 
       console.log(`\x1b[32mRoadroller packed JS size: ${Buffer.byteLength(packedJs, 'utf-8').toLocaleString()} bytes\x1b[0m`);
 
-      // Replace with packed script
-      html = html.replace(scriptFound.fullMatch, `<script>${packedJs}</script>`);
+      // Replace with packed script (use function callback to prevent $ pattern corruption)
+      html = html.replace(scriptFound.fullMatch, () => `<script>${packedJs}</script>`);
       
       // Minify HTML structure
       html = html

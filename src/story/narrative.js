@@ -14,12 +14,8 @@ export class NarrativeManager {
     return (target || new window.THREE.Vector3()).set(Math.cos(a) * r, 4.7 + cu * 38.0, -12 + Math.sin(a) * r);
   }
 
-  _isVR() { return this.game.renderer?.xr?.isPresenting; }
-
   _moveCamera(pos, lookTarget) {
-    if (this._isVR()) {
-      // In VR: camera is child of xrGroup, so only move xrGroup.
-      // Camera local position must stay at (0,0,0) for proper stereo rendering.
+    if (this.game.renderer?.xr?.isPresenting) {
       this.game.camera.position.set(0, 0, 0);
       this.game.camera.quaternion.identity();
       const xg = this.game.xr?.xrGroup;
@@ -38,7 +34,7 @@ export class NarrativeManager {
     this.act = 0;
     this.game.setAwakened(1.0);
     this._moveCamera(this.getSlidePoint(1.0), this.getSlidePoint(0.96));
-    if (this.game.vrHud) this.game.vrHud.show('🌈 CHILDHOOD', 'Trigger to Slide!');
+    this.game.vrHud?.show('🌈 CHILDHOOD', 'Trigger to Slide!');
   }
 
   triggerSlide() {
@@ -46,7 +42,7 @@ export class NarrativeManager {
     this.isSliding = true;
     this.slideProgress = 0;
     audio.tone('sine', 480, 0.3, 0.08);
-    if (this.game.vrHud) this.game.vrHud.show('HOLD ON!', 'Wheeeeeee!');
+    this.game.vrHud?.show('HOLD ON!', 'Wheeeeeee!');
   }
 
   updateSlide(delta) {
@@ -63,7 +59,7 @@ export class NarrativeManager {
       this.act = 1;
       this.game.setAwakened(0);
       this._moveCamera(new window.THREE.Vector3(0, 1.7, 5), new window.THREE.Vector3(0, 1.7, -12));
-      if (this.game.vrHud) this.game.vrHud.show('💔 LOST COLORS', 'Restore 7 Shards!', 'Laser / Punch');
+      this.game.vrHud?.show('💔 LOST COLORS', 'Restore 7 Shards!', 'Laser / Punch');
     }
   }
 
@@ -78,11 +74,11 @@ export class NarrativeManager {
     this.act = 3;
     this.game.setAwakened(1.0);
     audio.playAscent();
-    if (this.game.vrHud) this.game.vrHud.show('✨ UNICORN AWAKENS', 'Wonder returned.');
+    this.game.vrHud?.show('✨ UNICORN AWAKENS', 'Wonder returned.');
     this.game.unicornState = 'gallop';
     setTimeout(() => {
       this.act = 4;
-      if (this.game.vrHud) this.game.vrHud.show('🌈 ASCENSION', 'You remembered.');
+      this.game.vrHud?.show('🌈 ASCENSION', 'You remembered.');
       this.game.unicornState = 'ascend';
     }, 2500);
   }

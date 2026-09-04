@@ -3,14 +3,14 @@ import { audio } from '../audio/synth.js';
 import { getTerrainHeight } from '../models/world.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -48, 18, 'Fire', '✨ Art'],
-  ['Orange', 0xff7700, 52, 26, 'Play', '✨ Play'],
-  ['Yellow', 0xffcc00, -62, -42, 'Warmth', '✨ Call'],
-  ['Green', 0x11cc44, 68, -36, 'Wonder', '✨ Sky'],
-  ['Blue', 0x00aaff, -38, 68, 'Peace', '✨ Breathe'],
-  ['Indigo', 0x5533ee, 45, 72, 'Mystery', '✨ Read'],
-  ['Violet', 0xcc22ee, 0, -82, 'Dreams', '✨ Dream']
-].map(([name, color, x, z, phrase, action], index) => ({ name, color, pos: [x, 0, z], phrase: phrase + ' returned.', action: action + '!', index }));
+  ['Red',0xff2244,-48,18,'Fire','✨ Art'],
+  ['Orange',0xff7700,52,26,'Play','✨ Play'],
+  ['Yellow',0xffcc00,-62,-42,'Warmth','✨ Call'],
+  ['Green',0x11cc44,68,-36,'Wonder','✨ Sky'],
+  ['Blue',0x00aaff,-38,68,'Peace','✨ Breathe'],
+  ['Indigo',0x5533ee,45,72,'Mystery','✨ Read'],
+  ['Violet',0xcc22ee,0,-82,'Dreams','✨ Dream']
+].map(([name,color,x,z,phrase,action],index) => ({ name, color, pos: [x, 0, z], phrase: phrase + ' returned.', action: action + '!', index }));
 
 export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics) {
   const THREE = window.THREE;
@@ -57,8 +57,8 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics)
           shard.shellMesh.visible = false;
           if (pulseHaptics) pulseHaptics('both', 0.9, 250);
         });
-      } else {
-        if (vrHud) vrHud.show(shard.data.name + ' [LOCKED]', shard.data.action, 'Prototype locked in Demo');
+      } else if (vrHud) {
+        vrHud.show(shard.data.name + ' [LOCKED]', shard.data.action, 'Prototype locked in Demo');
       }
       return null;
     }
@@ -96,14 +96,13 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics)
           s.shellMesh.rotation.y -= delta * 0.8;
           s.shellMesh.rotation.z += delta * 0.5;
           s.coreMesh.position.y = s.coreMesh.userData.initialY + Math.sin(t + s.coreMesh.userData.index) * 0.4;
-          s.shellMesh.position.y = s.coreMesh.position.y;
-          s.orbLight.position.y = s.coreMesh.position.y;
+          s.shellMesh.position.y = s.orbLight.position.y = s.coreMesh.position.y;
 
           if (s.vibrate > 0) {
             s.vibrate -= delta;
             const vx = (Math.random() - 0.5) * 0.14, vz = (Math.random() - 0.5) * 0.14;
-            s.coreMesh.position.x = s.data.pos[0] + vx; s.shellMesh.position.x = s.data.pos[0] + vx;
-            s.coreMesh.position.z = s.data.pos[2] + vz; s.shellMesh.position.z = s.data.pos[2] + vz;
+            s.coreMesh.position.x = s.shellMesh.position.x = s.data.pos[0] + vx;
+            s.coreMesh.position.z = s.shellMesh.position.z = s.data.pos[2] + vz;
           } else {
             s.coreMesh.position.x = s.shellMesh.position.x = s.data.pos[0];
             s.coreMesh.position.z = s.shellMesh.position.z = s.data.pos[2];

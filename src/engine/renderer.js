@@ -20,12 +20,9 @@ export function createRenderer() {
   sunLight.position.set(30, 55, 20);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(1024, 1024);
-  sunLight.shadow.camera.near = 0.5;
-  sunLight.shadow.camera.far = 180;
-  const d = 85, sc = sunLight.shadow.camera;
-  sc.left = sc.bottom = -d; sc.right = sc.top = d;
-  sunLight.shadow.bias = -0.0001;
-  sunLight.shadow.normalBias = 0.08;
+  const sc = sunLight.shadow.camera;
+  sc.near = 0.5; sc.far = 180; sc.left = sc.bottom = -85; sc.right = sc.top = 85;
+  sunLight.shadow.bias = -0.0001; sunLight.shadow.normalBias = 0.08;
 
   const pointLight = new THREE.PointLight(0xff55aa, 1.8, 40);
   pointLight.position.set(0, 3, -12);
