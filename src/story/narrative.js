@@ -72,13 +72,14 @@ export class NarrativeManager {
 
   triggerUnicornAwakening() {
     this.act = 3;
+    if (this.game.isMounted) this.game.toggleMount();
     this.game.setAwakened(1.0);
     audio.playAscent();
     this.game.vrHud?.show('✨ UNICORN AWAKENS', 'Wonder returned.');
     this.game.unicornState = 'gallop';
     setTimeout(() => {
       this.act = 4;
-      this.game.vrHud?.show('🌈 ASCENSION', 'You remembered.');
+      this.game.vrHud?.show('🌈 ASCENSION', 'You remembered childhood wonder.');
       this.game.unicornState = 'ascend';
     }, 2500);
   }

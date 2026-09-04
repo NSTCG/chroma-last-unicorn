@@ -1,0 +1,3 @@
+export const STD_VS = 'varying vec3 vWP,vVP,vN;void main(){vN=normalize(normalMatrix*normal);vWP=(modelMatrix*vec4(position,1.0)).xyz;vec4 mv=modelViewMatrix*vec4(position,1.0);vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}';
+export const RAINBOW_GLSL = 'vec3 rb(float t){return vec3(0.5)+vec3(0.5)*cos(6.283*(vec3(t)+vec3(0,0.33,0.67)));}';
+export const NOISE_GLSL = 'float cN(vec2 p,float t){vec2 u1=p*0.025+vec2(t*0.06,t*0.03),u2=p*0.05-vec2(t*0.04,t*0.07);return smoothstep(0.2,0.85,(sin(u1.x*3.14+cos(u1.y*2.7))*cos(u1.y*3.14+sin(u1.x*2.1))*0.5+0.5)*0.65+(sin(u2.x*2.8+u2.y*1.9)*cos(u2.y*3.2-u2.x*1.5)*0.5+0.5)*0.35);}';

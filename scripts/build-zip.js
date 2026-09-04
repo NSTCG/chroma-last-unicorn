@@ -75,7 +75,7 @@ async function runBuildPipeline() {
           }
         ],
         {
-          numAbbreviations: 128,
+          numAbbreviations: 64,
           allowFreeVars: true
         }
       );

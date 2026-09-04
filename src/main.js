@@ -22,7 +22,7 @@ class ChromaGame {
     this.sky = createRainbowSky(this.scene);
     this.particles = createParticleSystem(this.scene);
     this.world = createWorld(this.scene);
-    this.grass = createGrassField(this.scene, 46000);
+    this.grass = createGrassField(this.scene, 38000);
     this.unicorn = createUnicorn(this.scene);
 
     this.unicornState = 'idle';
@@ -30,7 +30,7 @@ class ChromaGame {
     this.narrative = new NarrativeManager(this);
 
     const pulseHaptics = (h, i, d) => this.xr?.pulseHaptics?.(h, i, d);
-    this.shards = createShardsSystem(this.scene, () => this.narrative.onShardCollected(), this.vrHud, pulseHaptics);
+    this.shards = createShardsSystem(this.scene, () => this.narrative.onShardCollected(), this.vrHud, pulseHaptics, () => { if (!this.isMounted) this.toggleMount(); });
 
     const getInteractive = () => [...this.shards.getInteractiveMeshes(), ...this.unicorn.getInteractiveMeshes()];
     const onSelect = (mesh) => {
@@ -51,10 +51,9 @@ class ChromaGame {
 
   toggleMount() {
     this.isMounted = !this.isMounted;
-    if (this.xr?.pulseHaptics) this.xr.pulseHaptics('both', 0.8, 180);
-    if (this.isMounted) {
-      this.vrHud.show('🦄 MOUNTED UNICORN', 'WASD / Stick to ride, Click to dismount');
-    } else {
+    this.xr?.pulseHaptics?.('both', 0.8, 180);
+    if (this.isMounted) this.vrHud.show('🦄 MOUNTED', 'WASD to ride, Click to dismount');
+    else {
       const ux = this.unicorn.group.position.x - 1.8, uz = this.unicorn.group.position.z + 1.2;
       if (this.renderer.xr.isPresenting) this.xr.xrGroup.position.set(ux, this.xr.xrGroup.position.y, uz);
       else { this.camera.position.x = ux; this.camera.position.z = uz; }
@@ -73,14 +72,14 @@ class ChromaGame {
   initUI() {
     const overlay = document.getElementById('overlay'), btnPc = document.getElementById('btn-start-pc'), btnVr = document.getElementById('btn-start-vr'), navVrBtn = document.getElementById('nav-vr-btn');
     const startGame = () => {
-      if (overlay) overlay.classList.add('hidden');
+      overlay?.classList.add('hidden');
       this.narrative.startExperience();
     };
 
-    if (btnPc) btnPc.addEventListener('click', () => { startGame(); this.renderer.domElement.requestPointerLock(); });
+    btnPc?.addEventListener('click', () => { startGame(); this.renderer.domElement.requestPointerLock?.(); });
     const launchVR = () => { startGame(); this.xr.startVR(); };
-    if (btnVr) btnVr.addEventListener('click', launchVR);
-    if (navVrBtn) navVrBtn.addEventListener('click', launchVR);
+    btnVr?.addEventListener('click', launchVR);
+    navVrBtn?.addEventListener('click', launchVR);
 
     if (navigator.xr) {
       navigator.xr.isSessionSupported('immersive-vr').then((s) => { if (navVrBtn) navVrBtn.style.display = s ? 'inline-flex' : 'none'; }).catch(() => {});
@@ -96,7 +95,8 @@ class ChromaGame {
       this.world.update(delta, this.camera);
       this.grass.update(delta);
       if (!this.isMounted) this.unicorn.update(delta, this.unicornState);
-      this.shards.update(delta);
+      const playerPos = this.renderer.xr.isPresenting ? this.xr.xrGroup.position : this.camera.position;
+      this.shards.update(delta, playerPos, this.isMounted);
       this.narrative.update(delta);
       const isVR = this.renderer.xr.isPresenting;
       this.vrHud.update(delta, this.camera, isVR, isVR ? this.xr.getRightController() : null);
