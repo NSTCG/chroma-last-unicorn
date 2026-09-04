@@ -12,16 +12,6 @@ export function createWorld(scene) {
 
   const groundUniforms = { uTime: { value: 0 }, uAwakened: { value: 0 } };
 
-  const rockShader = `precision highp float;uniform float uTime,uAwakened;uniform vec3 uTint;varying vec3 vWP,vVP,vN;void main(){vec3 N=normalize(vN),L=normalize(vec3(0.5,1.0,0.4)),V=normalize(vVP);float d=dot(N,L),cel=smoothstep(-0.15,0.05,d)*0.35+smoothstep(0.18,0.42,d)*0.45+0.20,rim=pow(1.0-max(dot(N,V),0.0),3.0)*0.45;vec3 base=mix(vec3(0.18,0.18,0.22),vec3(0.46,0.44,0.42),uAwakened);gl_FragColor=vec4(mix(base*uTint,base,0.35)*cel+vec3(0.1)*rim,1.0-smoothstep(70.0,165.0,length(vVP)));}`;
-
-  const createRockMaterial = (tint = 0xffffff) => new THREE.ShaderMaterial({
-    uniforms: { ...groundUniforms, uTint: { value: new THREE.Color(tint) } },
-    vertexShader: STD_VS, fragmentShader: rockShader,
-    side: THREE.DoubleSide, transparent: true
-  });
-
-  const stoneMat = createRockMaterial(0x90909e);
-
   const groundMat = new THREE.ShaderMaterial({
     uniforms: groundUniforms,
     vertexShader: STD_VS,
@@ -38,6 +28,7 @@ export function createWorld(scene) {
   ground.position.set(0, 0, -12);
   worldGroup.add(ground);
 
+  const stoneMat = new THREE.MeshBasicMaterial({ color: 0x666677, wireframe: true });
   const altar = new THREE.Mesh(new THREE.CylinderGeometry(8, 9.5, 0.8, 8), stoneMat);
   altar.position.set(0, 0.4, -12);
   const ped = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 3.2, 0.8, 6), stoneMat);
@@ -60,7 +51,7 @@ export function createWorld(scene) {
     [18,6.5,12,0x11cc44],[-24,7.8,-18,0x00aaff],[24,7.5,-18,0x5533ee],[0,9.8,-28,0xcc22ee]
   ].map(([x, y, z, color]) => {
     const g = new THREE.Group(); g.position.set(x, y, z);
-    const m = new THREE.Mesh(islGeo, createRockMaterial(color));
+    const m = new THREE.Mesh(islGeo, new THREE.MeshBasicMaterial({ color, wireframe: true }));
     g.add(m); worldGroup.add(g);
     return { group: g, basePos: new THREE.Vector3(x, y, z), seed: Math.random() * 100 };
   });

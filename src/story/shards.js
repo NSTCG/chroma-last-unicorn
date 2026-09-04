@@ -3,14 +3,14 @@ import { audio } from '../audio/synth.js';
 import { getTerrainHeight } from '../models/world.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -48, 18, 'Fire', 'Art'],
-  ['Orange', 0xff7700, 52, 26, 'Play', 'Play'],
-  ['Yellow', 0xffcc00, -62, -42, 'Warmth', 'Call'],
-  ['Green', 0x11cc44, 68, -36, 'Wonder', 'Sky'],
-  ['Blue', 0x00aaff, -38, 68, 'Peace', 'Breathe'],
-  ['Indigo', 0x5533ee, 45, 72, 'Mystery', 'Read'],
-  ['Violet', 0xcc22ee, 0, -82, 'Dreams', 'Dream']
-].map(([name, color, x, z, phrase, action], index) => ({ name, color, pos: [x, 0, z], phrase: phrase + ' returned.', action: '✨ ' + action + '!', index }));
+  ['Red', 0xff2244, -48, 18, 'Art'],
+  ['Orange', 0xff7700, 52, 26, 'Play'],
+  ['Yellow', 0xffcc00, -62, -42, 'Call'],
+  ['Green', 0x11cc44, 68, -36, 'Sky'],
+  ['Blue', 0x00aaff, -38, 68, 'Breathe'],
+  ['Indigo', 0x5533ee, 45, 72, 'Read'],
+  ['Violet', 0xcc22ee, 0, -82, 'Dream']
+].map(([name, color, x, z, act], index) => ({ name, color, pos: [x, 0, z], phrase: name + ' returned.', action: '✨ ' + act + '!', index }));
 
 export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics, requestMount) {
   const THREE = window.THREE;
@@ -23,7 +23,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   beaconGeo.translate(0, 25.0, 0);
 
   SHARDS_DATA.forEach((data) => {
-    const coreMat = createPrismaticMaterial({ baseColor: data.color, iridescence: 2.5, dispersion: 3.0, glitter: 0.8, emissive: 0.9, awakened: 1.0 });
+    const coreMat = createPrismaticMaterial({ baseColor: data.color, awakened: 1.0 });
     const coreMesh = new THREE.Mesh(shardGeo, coreMat);
     const py = getTerrainHeight(data.pos[0], data.pos[2]) + 4.5;
     coreMesh.position.set(data.pos[0], py, data.pos[2]);
@@ -78,7 +78,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       redHits++;
       audio.playPluck(440 + redHits * 140, 0.4, 0.28);
       pulseHaptics?.('right', 0.7, 120);
-      if (redHits >= 3) unlockShard(0, '🎨 CREATIVITY RESTORED!', 'The flame of art burns again.');
+      if (redHits >= 3) unlockShard(0, '🎨 CREATIVITY RESTORED!', 'Flame of art burns again.');
       else vrHud?.show('🎨 ART SPARK', `Spark ${redHits}/3 Ignited!`, 'Strike remaining sparks');
     });
   }
@@ -108,8 +108,8 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       grnHits++;
       audio.tone('sine', 587 + grnHits * 140, 0.75, 0.22);
       pulseHaptics?.('both', 0.7, 140);
-      if (grnHits >= 3) unlockShard(3, '✨ WONDER RESTORED!', 'Sky is infinite once more.');
-      else vrHud?.show('✨ SKY CONSTELLATION', `Star ${grnHits}/3 Aligned!`, 'Look up and aim at stars');
+      if (grnHits >= 3) unlockShard(3, '✨ WONDER RESTORED!', 'Sky is infinite again.');
+      else vrHud?.show('✨ SKY CONSTELLATION', `Star ${grnHits}/3 Aligned!`, 'Look up at stars');
     });
   });
 
@@ -123,7 +123,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   seatPlank.position.set(0, 0.9, 0);
   swingGroup.add(seatPlank);
   shardsGroup.add(swingGroup);
-  addTarget(seatPlank, 4, 4.8, () => { vrHud?.show('🕊️ PEACE', 'Inhale stillness... Exhale tension', 'Stand near swing to calm'); });
+  addTarget(seatPlank, 4, 4.8, () => { vrHud?.show('🕊️ PEACE', 'Inhale calm... Exhale tension', 'Stand near swing to calm'); });
 
   // 5: Indigo - Monolith & Rune
   const indPos = SHARDS_DATA[5].pos, indBaseY = getTerrainHeight(indPos[0], indPos[2]);
@@ -139,7 +139,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   addTarget(runeMark, 5, 2.4, (t) => {
     t.done = true; runeMark.material.wireframe = false; monoMat.wireframe = false;
     audio.playAscent();
-    setTimeout(() => unlockShard(5, '🔮 MYSTERY RESTORED!', 'Imagination knows no boundaries.'), 650);
+    setTimeout(() => unlockShard(5, '🔮 MYSTERY RESTORED!', 'Imagination unlocked.'), 650);
   });
 
   // 6: Violet - Rainbow Gates & Unicorn Ride
@@ -154,7 +154,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       gatesCleared++;
       audio.tone('triangle', 392 + gatesCleared * 110, 0.45, 0.28, 480 + gatesCleared * 110);
       pulseHaptics?.('both', 0.85, 180);
-      if (gatesCleared >= 5) { audio.playAscent(); unlockShard(6, '🌈 CELESTIAL DREAM!', 'All 7 colors restored. Ride to destiny!'); }
+      if (gatesCleared >= 5) { audio.playAscent(); unlockShard(6, '🌈 CELESTIAL DREAM!', 'All 7 colors restored!'); }
       else vrHud?.show('🦄 RAINBOW RIDE', `Gate ${gatesCleared}/5 Cleared!`, 'Gallop to next Rainbow Gate');
     });
   });

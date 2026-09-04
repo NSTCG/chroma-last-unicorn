@@ -23,9 +23,9 @@ export function createVRHUD(scene, camera) {
 
   let callState = 'idle', callTimer = 0, onCallComplete = null;
   const dialogueLines = [
-    'Maya: "Hey! Great to hear you!"',
-    'Maya: "Remember chasing rainbows?"',
-    'Maya: "Warmth never left. Shatter shell!"'
+    'Maya: "Great to hear you!"',
+    'Maya: "Remember rainbows?"',
+    'Maya: "Shatter the shell!"'
   ];
 
   function redraw() {
