@@ -9,23 +9,9 @@ export const getHit = (hits) => {
 
 export function setupPCControls(camera, domElement, getInteractiveObjects, onSelectObject, getUnicornState, renderer, vrHud) {
   const THREE = window.THREE;
-  let isLocked = false, isMouseDown = false, prevMouseX = 0, prevMouseY = 0, footTimer = 0, hoofTimer = 0;
-  const keys = {}, euler = new THREE.Euler(0, 0, 0, 'YXZ'), raycaster = new THREE.Raycaster(), center = new THREE.Vector2(0, 0);
+  let footTimer = 0, hoofTimer = 0, lookId = null, moveId = null, lx = 0, ly = 0, ox = 0, oy = 0, dragDist = 0;
+  const joy = [0, 0], keys = {}, euler = new THREE.Euler(0, 0, 0, 'YXZ'), raycaster = new THREE.Raycaster(), center = new THREE.Vector2(0, 0);
   const crosshair = document.getElementById('crosshair');
-
-  const onMouseMove = (mx, my) => {
-    if (renderer?.xr?.isPresenting) return;
-    euler.setFromQuaternion(camera.quaternion);
-    euler.y -= mx * 0.0022;
-    euler.x = Math.max(-1.52, Math.min(1.52, euler.x - my * 0.0022));
-    camera.quaternion.setFromEuler(euler);
-  };
-
-  document.addEventListener('mousemove', (e) => {
-    if (renderer?.xr?.isPresenting) return;
-    if (isLocked) onMouseMove(e.movementX || 0, e.movementY || 0);
-    else if (isMouseDown) { onMouseMove(e.clientX - prevMouseX, e.clientY - prevMouseY); prevMouseX = e.clientX; prevMouseY = e.clientY; }
-  });
 
   const tryInteract = () => {
     if (renderer?.xr?.isPresenting) return;
@@ -33,15 +19,41 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
     onSelectObject(getHit(raycaster.intersectObjects(getInteractiveObjects(), true)));
   };
 
-  domElement.addEventListener('mousedown', (e) => {
-    if (renderer?.xr?.isPresenting) return;
-    isMouseDown = true; prevMouseX = e.clientX; prevMouseY = e.clientY;
-    if (!isLocked && domElement.requestPointerLock) { try { domElement.requestPointerLock(); } catch (_) {} }
-    tryInteract();
+  window.addEventListener('pointerdown', (e) => {
+    if (renderer?.xr?.isPresenting || e.target?.closest?.('#overlay,#top-left-bar')) return;
+    if (e.clientX < window.innerWidth * 0.5) {
+      if (lookId === null) { lookId = e.pointerId; lx = e.clientX; ly = e.clientY; }
+    } else if (moveId === null) {
+      moveId = e.pointerId; ox = e.clientX; oy = e.clientY;
+    }
+    dragDist = 0;
   });
 
-  window.addEventListener('mouseup', () => { isMouseDown = false; });
-  document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === domElement; });
+  window.addEventListener('pointermove', (e) => {
+    if (renderer?.xr?.isPresenting) return;
+    if (e.pointerId === lookId) {
+      dragDist += Math.abs(e.clientX - lx) + Math.abs(e.clientY - ly);
+      euler.setFromQuaternion(camera.quaternion);
+      euler.y -= (e.clientX - lx) * 0.0028;
+      euler.x = Math.max(-1.52, Math.min(1.52, euler.x - (e.clientY - ly) * 0.0028));
+      camera.quaternion.setFromEuler(euler);
+      lx = e.clientX; ly = e.clientY;
+    } else if (e.pointerId === moveId) {
+      const dx = e.clientX - ox, dy = e.clientY - oy;
+      dragDist += Math.abs(dx) + Math.abs(dy);
+      const d = Math.hypot(dx, dy) || 1, r = Math.min(50, d);
+      joy[0] = (dx / d) * (r / 50);
+      joy[1] = -(dy / d) * (r / 50);
+    }
+  });
+
+  const onUp = (e) => {
+    if (e.pointerId === lookId) lookId = null;
+    if (e.pointerId === moveId) { moveId = null; joy[0] = joy[1] = 0; }
+    if (dragDist < 8) tryInteract();
+  };
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
 
   window.addEventListener('keydown', (e) => {
     if (renderer?.xr?.isPresenting) return;
@@ -54,7 +66,6 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
   const moveDir = new THREE.Vector3(), forward = new THREE.Vector3(), right = new THREE.Vector3();
 
   return {
-    isLocked: () => isLocked,
     update: (delta) => {
       if (renderer?.xr?.isPresenting) return;
       raycaster.setFromCamera(center, camera);
@@ -66,10 +77,13 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
       forward.y = 0; forward.normalize();
       right.crossVectors(forward, camera.up).normalize();
 
-      if (keys['KeyW'] || keys['ArrowUp']) moveDir.add(forward);
-      if (keys['KeyS'] || keys['ArrowDown']) moveDir.sub(forward);
-      if (keys['KeyD'] || keys['ArrowRight']) moveDir.add(right);
-      if (keys['KeyA'] || keys['ArrowLeft']) moveDir.sub(right);
+      const kx = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+      const kz = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
+      const mx = Math.max(-1, Math.min(1, joy[0] + kx));
+      const mz = Math.max(-1, Math.min(1, joy[1] + kz));
+
+      if (Math.abs(mz) > 0.04) moveDir.addScaledVector(forward, mz);
+      if (Math.abs(mx) > 0.04) moveDir.addScaledVector(right, mx);
 
       const { isMounted, unicorn } = getUnicornState?.() || {};
 
@@ -87,9 +101,10 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
         unicorn.update(delta, isMoving ? 'gallop' : 'idle');
         camera.position.set(unicorn.group.position.x, unicorn.group.position.y + 1.85, unicorn.group.position.z);
       } else {
-        if (moveDir.lengthSq() > 0) {
+        const moveLen = Math.min(1, moveDir.length());
+        if (moveLen > 0.04) {
           moveDir.normalize();
-          camera.position.addScaledVector(moveDir, 8.5 * delta);
+          camera.position.addScaledVector(moveDir, 8.5 * moveLen * delta);
           footTimer += delta;
           if (footTimer > 0.44) { footTimer = 0; audio.playFootstep(); }
         }

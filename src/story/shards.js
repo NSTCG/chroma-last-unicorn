@@ -78,7 +78,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       redHits++;
       audio.playPluck(440 + redHits * 140, 0.4, 0.28);
       pulseHaptics?.('right', 0.7, 120);
-      if (redHits >= 3) unlockShard(0, '🎨 CREATIVITY RESTORED!', 'Flame of art burns again.');
+      if (redHits >= 3) unlockShard(0, '🎨 CREATIVE', 'Art burns again.');
       else vrHud?.show('🎨 ART SPARK', `Spark ${redHits}/3 Ignited!`, 'Strike remaining sparks');
     });
   }
@@ -93,7 +93,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
     toyCube.rotation.y += 1.57; toyCube.rotation.x += 0.78;
     audio.tone('triangle', 320 + orgHits * 120, 0.16, 0.22);
     pulseHaptics?.('right', 0.6, 90);
-    if (orgHits >= 3) { t.done = true; toyCube.material.color.setHex(0xffea44); unlockShard(1, '🧩 JOY RESTORED!', 'Pure play unlocked.'); }
+    if (orgHits >= 3) { t.done = true; toyCube.material.color.setHex(0xffea44); unlockShard(1, '🧩 JOY', 'Play unlocked.'); }
     else vrHud?.show('🧩 TOY PUZZLE', `Facet ${orgHits}/3 aligned!`, 'Tap again to solve');
   });
 
@@ -154,7 +154,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       gatesCleared++;
       audio.tone('triangle', 392 + gatesCleared * 110, 0.45, 0.28, 480 + gatesCleared * 110);
       pulseHaptics?.('both', 0.85, 180);
-      if (gatesCleared >= 5) { audio.playAscent(); unlockShard(6, '🌈 CELESTIAL DREAM!', 'All 7 colors restored!'); }
+      if (gatesCleared >= 5) { audio.playAscent(); unlockShard(6, '🌈 DREAM', '7 colors restored!'); }
       else vrHud?.show('🦄 RAINBOW RIDE', `Gate ${gatesCleared}/5 Cleared!`, 'Gallop to next Rainbow Gate');
     });
   });
@@ -166,14 +166,14 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       audio.playResonate();
       pulseHaptics?.('both', 0.65, 120);
       const idx = shard.data.index;
-      if (idx === 0) vrHud?.show('🎨 ART SPARK', 'Maya: "Paint without fear!"', 'Strike 3 Spark Stones');
-      else if (idx === 1) vrHud?.show('🧩 PLAY', 'Maya: "We solved the secret puzzle cube!"', 'Tap rotating toy cube');
-      else if (idx === 2) vrHud?.startCallTask?.(shard, () => unlockShard(2, '✨ WARMTH RESTORED!', 'Reconnected with Maya.'));
-      else if (idx === 3) vrHud?.show('✨ WONDER', 'Maya: "Look up at the stars above!"', 'Aim up at the 3 sky stars');
-      else if (idx === 4) vrHud?.show('🕊️ PEACE', 'Maya: "Sit by the swing. Just breathe..."', 'Stand near swing to breathe');
-      else if (idx === 5) vrHud?.show('🔮 MYSTERY', 'Maya: "The secret map marked the spot!"', 'Step onto glowing rune mark');
+      if (idx === 0) vrHud?.show('🎨 ART', 'Paint freely!', 'Strike 3 Sparks');
+      else if (idx === 1) vrHud?.show('🧩 PLAY', 'Secret puzzle!', 'Tap toy cube');
+      else if (idx === 2) vrHud?.startCallTask?.(shard, () => unlockShard(2, '✨ WARMTH', 'Reconnected with Maya.'));
+      else if (idx === 3) vrHud?.show('✨ WONDER', 'Look to stars!', 'Aim up at 3 stars');
+      else if (idx === 4) vrHud?.show('🕊️ PEACE', 'Sit by swing. Breathe...', 'Stand near swing');
+      else if (idx === 5) vrHud?.show('🔮 MYSTERY', 'Secret map mark!', 'Step onto rune mark');
       else if (idx === 6) {
-        vrHud?.show('🦄 CELESTIAL RIDE', 'Maya: "Mount the Unicorn! Ride the Rainbow!"', 'Gallop through 5 Rainbow Gates');
+        vrHud?.show('🦄 CELESTIAL', 'Ride Rainbow!', 'Pass 5 Gates');
         requestMount?.();
       }
       return null;
@@ -258,7 +258,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
                 if (blueBreaths >= 3) {
                   audio.playPeacefulChords();
                   tgt.done = true;
-                  unlockShard(4, '🕊️ PEACE RESTORED!', 'Anxiety washed away in calm.');
+                  unlockShard(4, '🕊️ PEACE', 'Calm restored.');
                 } else vrHud?.show('🕊️ PEACE BREATHING', `Inhale calm... (${blueBreaths}/3)`, 'Release all stress');
               }
             } else tgt.onHit();

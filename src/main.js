@@ -76,7 +76,7 @@ class ChromaGame {
       this.narrative.startExperience();
     };
 
-    btnPc?.addEventListener('click', () => { startGame(); this.renderer.domElement.requestPointerLock?.(); });
+    btnPc?.addEventListener('click', startGame);
     const launchVR = () => { startGame(); this.xr.startVR(); };
     btnVr?.addEventListener('click', launchVR);
     navVrBtn?.addEventListener('click', launchVR);
