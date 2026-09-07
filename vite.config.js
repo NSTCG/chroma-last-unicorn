@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
       __DEV__: JSON.stringify(isDev)
     },
     build: {
+      modulePreload: false,
       emptyOutDir: true,
       target: 'esnext',
       minify: 'terser',
@@ -36,7 +37,7 @@ export default defineConfig(({ mode }) => {
         compress: {
           drop_console: !isDev,
           drop_debugger: !isDev,
-          passes: 3,
+          passes: 5,
           pure_getters: true,
           unsafe: true,
           unsafe_arrows: true,
@@ -46,7 +47,7 @@ export default defineConfig(({ mode }) => {
           hoist_funs: true,
           hoist_vars: true,
           reduce_vars: true,
-          booleans_as_integers: false
+          booleans_as_integers: true
         },
         mangle: {
           toplevel: true,
