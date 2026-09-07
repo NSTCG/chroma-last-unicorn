@@ -85,7 +85,7 @@ function initGame() {
   if (navVrBtn) navVrBtn.addEventListener('click', launchVR);
 
   if (navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-vr').then((s) => { if (navVrBtn) navVrBtn.style.display = s ? 'inline-flex' : 'none'; }).catch(() => {});
+    navigator.xr.isSessionSupported('immersive-vr').then((s) => { if (navVrBtn) navVrBtn.style.display = s ? 'inline-flex' : 'none'; }).catch(() => { });
   }
 
   const clock = new window.THREE.Clock();

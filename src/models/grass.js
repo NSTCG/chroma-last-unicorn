@@ -56,13 +56,13 @@ export function createGrassField(scene, count = 46000) {
 
   const dummy = new T.Object3D();
   for (let placed = 0; placed < count; placed++) {
-    const a = Math.random() * 6.28, r = 8.5 + Math.sqrt(Math.random()) * 85;
+    const a = Math.random() * 6.28, r = 8.5 + Math.pow(Math.random(), 1.4) * 72;
     const px = Math.cos(a) * r, pz = -12 + Math.sin(a) * r;
     const py = getTerrainHeight(px, pz) - 0.05;
-    const s = 0.8 + Math.random() * 0.5;
+    const s = 0.9 + Math.random() * 0.6;
     dummy.position.set(px, py, pz);
     dummy.rotation.y = Math.random() * 6.28;
-    dummy.scale.set(s * 1.8, s, s * 1.8);
+    dummy.scale.set(s * 2.5, s * 1.15, s * 2.5);
     dummy.updateMatrix();
     mesh.setMatrixAt(placed, dummy.matrix);
   }
