@@ -19,7 +19,7 @@ function initGame() {
   const sky = createRainbowSky(scene);
   const particles = createParticleSystem(scene);
   const world = createWorld(scene);
-  const grass = createGrassField(scene, 46000);
+  const grass = createGrassField(scene, 22000);
   const unicorn = createUnicorn(scene);
 
   let unicornState = 'idle', isMounted = false;

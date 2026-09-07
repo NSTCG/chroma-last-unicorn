@@ -55,35 +55,16 @@ export function createGrassField(scene, count = 46000) {
   mesh.receiveShadow = true;
 
   const dummy = new T.Object3D();
-  let placed = 0, attempts = 0;
-
-  while (placed < count && attempts < count * 3.8) {
-    attempts++;
-    const a = attempts * 2.4;
-    let r = placed < count * .55
-      ? 8.5 + Math.sqrt(placed / (count * .55)) * 56
-      : 64 + Math.pow((placed - count * .55) / (count * .45), 1.3) * 150;
-
+  for (let placed = 0; placed < count; placed++) {
+    const a = Math.random() * 6.28, r = 8.5 + Math.sqrt(Math.random()) * 85;
     const px = Math.cos(a) * r, pz = -12 + Math.sin(a) * r;
-    if (Math.hypot(px, pz + 12) < 8.5) continue;
-
-    const py = getTerrainHeight(px, pz) - .08;
-    const hx = getTerrainHeight(px + .5, pz) - getTerrainHeight(px - .5, pz);
-    const hz = getTerrainHeight(px, pz + .5) - getTerrainHeight(px - .5, pz + .5);
-    const slope = Math.hypot(hx, hz);
-    if (slope > .62) continue;
-
-    const d = Math.hypot(px, pz + 12), isDistant = d > 55;
-    const distW = isDistant ? Math.min(3.6, 1 + (d - 55) / 50 * 1.5) : 1;
-    const distH = isDistant ? Math.min(2.2, 1 + (d - 55) / 70 * .8) : 1;
-    const s = (.9 + Math.random() * .55) * Math.max(.3, 1 - slope * 1.2);
-
+    const py = getTerrainHeight(px, pz) - 0.05;
+    const s = 0.8 + Math.random() * 0.5;
     dummy.position.set(px, py, pz);
-    dummy.rotation.set(-Math.atan2(hz, 1) + (Math.random() - .5) * .65, Math.random() * 6.28, Math.atan2(hx, 1) + (Math.random() - .5) * .65);
-    dummy.scale.set(s * (.95 + Math.random() * .4) * distW * 2, s * (.85 + Math.random() * .7) * distH, s * (.95 + Math.random() * .4) * distW * 2);
+    dummy.rotation.y = Math.random() * 6.28;
+    dummy.scale.set(s * 1.8, s, s * 1.8);
     dummy.updateMatrix();
     mesh.setMatrixAt(placed, dummy.matrix);
-    placed++;
   }
 
   mesh.instanceMatrix.needsUpdate = true;
