@@ -4,14 +4,14 @@ import { stdVS } from '../shaders/common.js';
 import { T, Grp, Msh, BMat, SMat, Col, CGeo, V3 } from '../engine/three.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -25, -6, 9.2, 'Fire', 'Art'],
-  ['Orange', 0xff7700, 25, -6, 9.2, 'Play', 'Play'],
-  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Warmth', 'Call'],
-  ['Green', 0x11cc44, 18, 12, 9.5, 'Wonder', 'Sky'],
-  ['Blue', 0x00aaff, -24, -18, 10.8, 'Peace', 'Breathe'],
-  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Mystery', 'Read'],
-  ['Violet', 0xcc22ee, 0, -28, 12.8, 'Dreams', 'Dream']
-].map(([name, color, x, z, y, phrase, action], index) => ({ name, color, pos: [x, y, z], phrase: phrase + ' returned.', action: '✨ ' + action + '!', index }));
+  ['Red', 0xff2244, -25, -6, 9.2, 'Art'],
+  ['Orange', 0xff7700, 25, -6, 9.2, 'Play'],
+  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Warmth'],
+  ['Green', 0x11cc44, 18, 12, 9.5, 'Wonder'],
+  ['Blue', 0x00aaff, -24, -18, 10.8, 'Peace'],
+  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Mystery'],
+  ['Violet', 0xcc22ee, 0, -28, 12.8, 'Dreams']
+].map(([name, color, x, z, y, title], index) => ({ name, color, pos: [x, y, z], phrase: title + ' restored.', action: '✨ Awaken!', index }));
 
 
 function createOrbMaterial(color) {
@@ -28,9 +28,9 @@ function createOrbMaterial(color) {
   return mat;
 }
 
-export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics) {
-  const shards = [], shardsGroup = Grp(), breakGroup = Grp();
-  shardsGroup.add(breakGroup);
+export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics, getUnicornState, camera) {
+  const shards = [], shardsGroup = Grp(), breakGroup = Grp(), taskGroup = Grp();
+  shardsGroup.add(breakGroup, taskGroup);
   scene.add(shardsGroup);
 
   const shardGeo = new T.OctahedronGeometry(1, 0);
@@ -77,29 +77,102 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics)
     if (m) { shardsGroup.remove(m); m.visible = false; }
   });
 
+  let activeTask = null;
+
+  const clearTask = () => {
+    while (taskGroup.children.length) taskGroup.remove(taskGroup.children[0]);
+    activeTask = null;
+  };
+
+  const unlockShard = (s) => {
+    s.unlocked = true;
+    vanish(s.shell, s.beacon);
+    triggerShatter(s.core.position, s.data.color);
+    if (pulseHaptics) pulseHaptics('both', 0.9, 250);
+    audio.playPluck(880, 0.6, 0.3);
+    clearTask();
+    if (vrHud) vrHud.show(s.data.name + ' SHELL BROKEN!', s.data.phrase, 'Punch / Click to collect!');
+  };
+
+  const addNode = (s, x, y, z) => {
+    const node = Msh(fragGeo, BMat({ color: s.data.color }));
+    node.position.set(s.data.pos[0] + x, s.data.pos[1] + y, s.data.pos[2] + z);
+    node.userData = { isTaskNode: true };
+    taskGroup.add(node);
+    return node;
+  };
+
+  const startShardTask = (s) => {
+    const idx = s.data.index;
+    clearTask();
+
+    if (idx === 2) {
+      vrHud?.startCallTask?.(s, () => unlockShard(s));
+      return;
+    }
+
+    if (idx === 6) {
+      if (getUnicornState?.().isMounted) unlockShard(s);
+      else vrHud?.show('🦄 DREAMS: MOUNT UNICORN', 'Riding bond required', 'Mount Unicorn & approach!');
+      return;
+    }
+
+    if (idx === 4) {
+      activeTask = { idx, type: 'peace', timer: 0 };
+      vrHud?.show('🕊️ PEACE: STILLNESS', 'Hold still & breathe...', 'Stillness: 0.0s / 2.5s');
+      return;
+    }
+
+    if (idx === 3) {
+      activeTask = { idx, type: 'wonder', timer: 0 };
+      const halo = Msh(CGeo(1.8, 1.8, 0.1, 12), BMat({ color: 0x11cc44, transparent: true, opacity: 0.75, wireframe: true }));
+      halo.position.set(s.data.pos[0], s.data.pos[1] + 3.6, s.data.pos[2]);
+      halo.rotation.x = Math.PI / 2;
+      taskGroup.add(halo);
+      vrHud?.show('🌿 WONDER: SKY GAZE', 'Look up into heavens!', 'Gaze up at the sky halo');
+      return;
+    }
+
+    activeTask = { idx, type: idx === 1 ? 'play' : (idx === 5 ? 'mystery' : 'art'), step: 0 };
+    if (idx === 1) {
+      addNode(s, 1.8, 0.3, 0.8);
+    } else {
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * 6.28;
+        addNode(s, Math.cos(a) * 1.8, (i - 1) * 0.6, Math.sin(a) * 1.8);
+      }
+    }
+    vrHud?.show(s.data.name + ' TASK', s.data.phrase, 'Progress [0/3]');
+  };
+
+  const onTaskNodeInteract = (node) => {
+    if (!activeTask) return null;
+    const s = shards[activeTask.idx];
+    if (!s) return null;
+    activeTask.step++;
+    triggerShatter(node.position, s.data.color);
+    if (pulseHaptics) pulseHaptics('right', 0.6, 90);
+    audio.playPluck(400 + activeTask.step * 110, 0.4, 0.2);
+    if (activeTask.step >= 3) unlockShard(s);
+    else {
+      if (activeTask.type === 'play') {
+        const a = activeTask.step * 2.2;
+        node.position.set(s.data.pos[0] + Math.cos(a) * 1.9, s.data.pos[1] + (activeTask.step - 1) * 0.5, s.data.pos[2] + Math.sin(a) * 1.9);
+      } else {
+        taskGroup.remove(node);
+      }
+      vrHud?.show(s.data.name + ' TASK', s.data.phrase, `Progress [${activeTask.step}/3]`);
+    }
+    return node;
+  };
+
   const interactShard = (shard) => {
     if (!shard || shard.collected) return null;
     if (!shard.unlocked) {
       shard.vib = 0.45;
       audio.playResonate();
       if (pulseHaptics) pulseHaptics('both', 0.65, 120);
-      if (shard.data.index === 2) {
-        if (vrHud?.startCallTask) vrHud.startCallTask(shard, () => {
-          shard.unlocked = true;
-          vanish(shard.shell, shard.beacon);
-          triggerShatter(shard.core.position, shard.data.color);
-          if (pulseHaptics) pulseHaptics('both', 0.9, 250);
-        });
-      } else if (shards[2]?.unlocked || shards[2]?.collected) {
-        shard.unlocked = true;
-        vanish(shard.shell, shard.beacon);
-        audio.playPluck(720, 0.4, 0.25);
-        triggerShatter(shard.core.position, shard.data.color);
-        if (pulseHaptics) pulseHaptics('both', 0.8, 180);
-        if (vrHud) vrHud.show(shard.data.name + ' SHELL BROKEN!', shard.data.phrase, 'Punch to collect crystal!');
-      } else if (vrHud) {
-        vrHud.show(shard.data.name + ' [LOCKED]', 'Protection active', 'Unlock Yellow Shard first!');
-      }
+      startShardTask(shard);
       return null;
     }
     return triggerCollect(shard);
@@ -121,11 +194,20 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics)
 
   return {
     shards,
-    getInteractiveMeshes: () => shards.filter(s => !s.collected).map(s => s.unlocked ? s.core : s.shell),
-    collect: (mesh) => mesh?.userData ? interactShard(shards[mesh.userData.index]) : null,
+    getInteractiveMeshes: () => [
+      ...shards.filter(s => !s.collected).map(s => s.unlocked ? s.core : s.shell),
+      ...taskGroup.children
+    ],
+    collect: (mesh) => {
+      if (mesh?.userData?.isTaskNode) return onTaskNodeInteract(mesh);
+      return mesh?.userData?.index != null ? interactShard(shards[mesh.userData.index]) : null;
+    },
     checkVRPunch: (pos) => {
       shards.forEach(s => {
         if (!s.collected && pos.distanceTo(s.core.position) < 1.8) interactShard(s);
+      });
+      taskGroup.children.forEach(node => {
+        if (pos.distanceTo(node.position) < 1.2) onTaskNodeInteract(node);
       });
     },
     update: (delta) => {
@@ -164,6 +246,29 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics)
           }
         }
       });
+
+      if (activeTask) {
+        const s = shards[activeTask.idx];
+        if (s && !s.unlocked) {
+          if (activeTask.type === 'wonder') {
+            const dir = V3(0, 0, 0);
+            if (camera) camera.getWorldDirection(dir);
+            if (dir.y > 0.38) {
+              activeTask.timer += delta;
+              audio.tone('sine', 330 + activeTask.timer * 180, 0.12, 0.05);
+              vrHud?.show('🌿 WONDER: SKY GAZE', 'Absorbing celestial light...', `Gaze: ${(activeTask.timer).toFixed(1)}s / 2.0s`);
+              if (activeTask.timer >= 2.0) unlockShard(s);
+            }
+          } else if (activeTask.type === 'peace') {
+            activeTask.timer += delta;
+            if (Math.random() < 0.08) audio.tone('sine', 220 + Math.sin(activeTask.timer * 3) * 30, 0.15, 0.08);
+            vrHud?.show('🕊️ PEACE: STILLNESS', 'Breathe with sanctuary...', `Stillness: ${(activeTask.timer).toFixed(1)}s / 2.5s`);
+            if (activeTask.timer >= 2.5) unlockShard(s);
+          } else if (activeTask.type === 'mystery') {
+            taskGroup.rotation.y += delta * 1.2;
+          }
+        }
+      }
 
       for (let i = breakFragments.length - 1; i >= 0; i--) {
         const f = breakFragments[i];

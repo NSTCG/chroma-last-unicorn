@@ -40,7 +40,8 @@ function initGame() {
   const narrative = createNarrative(gameObj);
 
   const pulseHaptics = (h, i, d) => gameObj.xr?.pulseHaptics?.(h, i, d);
-  const shards = createShardsSystem(scene, () => narrative.onShardCollected(), vrHud, pulseHaptics);
+  const getUState = () => ({ isMounted, unicorn });
+  const shards = createShardsSystem(scene, () => narrative.onShardCollected(), vrHud, pulseHaptics, getUState, camera);
 
   const toggleMount = () => {
     isMounted = !isMounted;
@@ -67,7 +68,6 @@ function initGame() {
     shards.collect(mesh);
   };
 
-  const getUState = () => ({ isMounted, unicorn });
   const pcControls = setupPCControls(camera, renderer.domElement, getInteractive, onSelect, getUState, renderer);
   gameObj.xr = setupXR(renderer, scene, camera, getInteractive, onSelect, (pos, speed) => shards.checkVRPunch(pos, speed), () => { if (narrative.act === 0) narrative.triggerSlide(); }, getUState, vrHud);
 
@@ -107,8 +107,14 @@ function initGame() {
 
   gameObj.shards = shards;
   gameObj.narrative = narrative;
-  if (__DEV__) setupDevStudio({ ...gameObj, narrative, unicorn, grass, world, shards, isMounted: () => isMounted });
+  gameObj.toggleMount = toggleMount;
+  gameObj.getUState = getUState;
+  window.game = gameObj;
   return gameObj;
 }
 
-window.addEventListener('DOMContentLoaded', () => { window.game = initGame(); });
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => { window.game = initGame(); });
+} else {
+  window.game = initGame();
+}
