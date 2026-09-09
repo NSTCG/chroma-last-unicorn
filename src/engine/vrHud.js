@@ -22,9 +22,9 @@ export function createVRHUD(scene, camera) {
 
   let callState = 'idle', callTimer = 0, talkStep = 0, onCallComplete = null, lastAction = 0;
   const dialogueLines = [
-    'Hey! Remember chasing rainbow light together?',
-    'Warmth never left. Colors were just sleeping!',
-    'You can break that shell now! Go shatter it!'
+    'Remember chasing rainbows?',
+    'Warmth never left!',
+    'Break that shell now!'
   ].map(s => `Maya: "${s}"`);
 
   const rr = (x, y, w, h, r = 20) => {
@@ -179,12 +179,18 @@ export function createVRHUD(scene, camera) {
           audio.playMumble(380 + talkStep * 20);
           hud.show('📞 MAYA ON CALL', dialogueLines[talkStep], talkStep === 2 ? 'Press [X] to Shatter Shell' : 'Press [X] to Continue');
         } else {
-          callState = 'done';
+          callState = 'idle';
           if (pulseHaptics) pulseHaptics('both', 0.9, 250);
           audio.playPluck(880, 0.6, 0.3);
           if (onCallComplete) onCallComplete();
           hud.show('✨ SHELL SHATTERED!', 'Warmth reconnected.', 'Punch / Click to collect!');
         }
+      }
+    },
+    resetCall: () => {
+      if (callState !== 'idle') {
+        callState = 'idle';
+        redraw();
       }
     },
     update: (delta, cam, isVR, leftCtrl, rightCtrl) => {

@@ -59,13 +59,9 @@ function initGame() {
   const getInteractive = () => [...shards.getInteractiveMeshes(), ...unicorn.getInteractiveMeshes()];
   const onSelect = (mesh, isKeyX = false) => {
     if (narrative.act === 0) return narrative.triggerSlide();
-    if (vrHud.isCalling) {
-      vrHud.triggerCallAction();
-      return;
-    }
-    if (isKeyX) return;
-    if (mesh?.userData?.isUnicorn || (isMounted && !mesh)) return toggleMount();
-    shards.collect(mesh);
+    if (mesh?.userData?.isTaskNode || mesh?.userData?.index != null) return shards.collect(mesh);
+    if (mesh?.userData?.isUnicorn || (isMounted && !mesh && !isKeyX)) return toggleMount();
+    if (vrHud.isCalling) return vrHud.triggerCallAction();
   };
 
   const pcControls = setupPCControls(camera, renderer.domElement, getInteractive, onSelect, getUState, renderer);

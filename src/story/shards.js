@@ -4,14 +4,14 @@ import { stdVS } from '../shaders/common.js';
 import { T, Grp, Msh, BMat, SMat, Col, CGeo, V3 } from '../engine/three.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -25, -6, 9.2, 'Art'],
-  ['Orange', 0xff7700, 25, -6, 9.2, 'Play'],
-  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Warmth'],
-  ['Green', 0x11cc44, 18, 12, 9.5, 'Wonder'],
-  ['Blue', 0x00aaff, -24, -18, 10.8, 'Peace'],
-  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Mystery'],
-  ['Violet', 0xcc22ee, 0, -28, 12.8, 'Dreams']
-].map(([name, color, x, z, y, title], index) => ({ name, color, pos: [x, y, z], phrase: title + ' restored.', action: '✨ Awaken!', index }));
+  ['Red', 0xff2244, -25, -6, 9.2, 'Click 3 red sparks'],
+  ['Orange', 0xff7700, 25, -6, 9.2, 'Catch spark 3 times'],
+  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Answer Maya call'],
+  ['Green', 0x11cc44, 18, 12, 9.5, 'Look up at sky halo'],
+  ['Blue', 0x00aaff, -24, -18, 10.8, 'Hold still & breathe'],
+  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Hit 3 rotating runes'],
+  ['Violet', 0xcc22ee, 0, -28, 12.8, 'Ride unicorn to shard']
+].map(([name, color, x, z, y, hint], index) => ({ name, color, pos: [x, y, z], phrase: name + ' restored.', hint, action: '✨ Awaken!', index }));
 
 
 function createOrbMaterial(color) {
@@ -37,7 +37,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   const shellGeo = new T.IcosahedronGeometry(1.6, 1);
   const beaconGeo = CGeo(.06, .6, 50, 4);
   beaconGeo.translate(0, 25, 0);
-  const fragGeo = new T.TetrahedronGeometry(0.24);
+  const fragGeo = new T.DodecahedronGeometry(0.38);
   const breakFragments = [];
 
   const rnd = () => Math.random() - .5;
@@ -91,7 +91,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
     if (pulseHaptics) pulseHaptics('both', 0.9, 250);
     audio.playPluck(880, 0.6, 0.3);
     clearTask();
-    if (vrHud) vrHud.show(s.data.name + ' SHELL BROKEN!', s.data.phrase, 'Punch / Click to collect!');
+    if (vrHud) vrHud.show('✨ ' + s.data.name + ' SHIELD BROKEN!', s.data.phrase, 'Click crystal to collect!');
   };
 
   const addNode = (s, x, y, z) => {
@@ -105,6 +105,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   const startShardTask = (s) => {
     const idx = s.data.index;
     clearTask();
+    vrHud?.resetCall?.();
 
     if (idx === 2) {
       vrHud?.startCallTask?.(s, () => unlockShard(s));
@@ -113,13 +114,13 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
 
     if (idx === 6) {
       if (getUnicornState?.().isMounted) unlockShard(s);
-      else vrHud?.show('🦄 DREAMS: MOUNT UNICORN', 'Riding bond required', 'Mount Unicorn & approach!');
+      else vrHud?.show('🦄 ' + s.data.name + ' SHARD', s.data.hint, 'Mount Unicorn (Click / X)');
       return;
     }
 
     if (idx === 4) {
       activeTask = { idx, type: 'peace', timer: 0 };
-      vrHud?.show('🕊️ PEACE: STILLNESS', 'Hold still & breathe...', 'Stillness: 0.0s / 2.5s');
+      vrHud?.show('🕊️ ' + s.data.name + ' SHARD', s.data.hint, 'Stillness: 0.0s / 2.5s');
       return;
     }
 
@@ -129,7 +130,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       halo.position.set(s.data.pos[0], s.data.pos[1] + 3.6, s.data.pos[2]);
       halo.rotation.x = Math.PI / 2;
       taskGroup.add(halo);
-      vrHud?.show('🌿 WONDER: SKY GAZE', 'Look up into heavens!', 'Gaze up at the sky halo');
+      vrHud?.show('🌿 ' + s.data.name + ' SHARD', s.data.hint, 'Gaze directly up at halo');
       return;
     }
 
@@ -142,7 +143,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
         addNode(s, Math.cos(a) * 1.8, (i - 1) * 0.6, Math.sin(a) * 1.8);
       }
     }
-    vrHud?.show(s.data.name + ' TASK', s.data.phrase, 'Progress [0/3]');
+    vrHud?.show('✨ ' + s.data.name + ' SHARD', s.data.hint, 'Progress: [0/3]');
   };
 
   const onTaskNodeInteract = (node) => {
@@ -161,7 +162,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       } else {
         taskGroup.remove(node);
       }
-      vrHud?.show(s.data.name + ' TASK', s.data.phrase, `Progress [${activeTask.step}/3]`);
+      vrHud?.show('✨ ' + s.data.name + ' SHARD', s.data.hint, `Progress: [${activeTask.step}/3]`);
     }
     return node;
   };
