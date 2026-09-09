@@ -235,8 +235,8 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
       if (activeTask) {
         const s = shards[activeTask.idx];
         if (s && !s.unlocked) {
-          const tm = `${activeTask.timer.toFixed(1)}s / 20.0s`;
           if (activeTask.type === 'wonder') {
+            const tm = `${activeTask.timer.toFixed(1)}s / 20.0s`;
             if (camera) camera.getWorldDirection(camDir);
             if (camDir.y > 0.65) {
               activeTask.timer += delta;
@@ -247,6 +247,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
               vrHud?.show('🟢 CELESTIAL SKY', 'Look high into the sky!', `Gaze: ${tm}`);
             }
           } else if (activeTask.type === 'peace') {
+            const tm = `${activeTask.timer.toFixed(1)}s / 20.0s`;
             if (camera) camera.getWorldPosition(camPos);
             const camQuat = camera?.quaternion;
             let moved = false;
