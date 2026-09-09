@@ -68,30 +68,42 @@ async function runBuildPipeline() {
       });
       const codeToPack = minified.code || scriptFound.code;
 
-      const packer = new Packer(
-        [
-          {
-            data: codeToPack,
-            type: 'js',
-            action: 'eval'
-          }
-        ],
-        {
-          numAbbreviations: 128,
-          allowFreeVars: true
-        }
-      );
-
-      // Deep Level 2 optimization for JS13k competition budget
-      await packer.optimize(2);
-      const { firstLine, secondLine } = packer.makeDecoder();
-      const packedJs = `${firstLine}\n${secondLine}`;
-
-      console.log(`\x1b[32mRoadroller packed JS size: ${Buffer.byteLength(packedJs, 'utf-8').toLocaleString()} bytes\x1b[0m`);
-
       // Ensure Three.js CDN script is placed BEFORE the packed game script
       const threeRegex = /<script\b[^>]*src=[^>]*three[^>]*><\/script>/i;
       const threeMatch = html.match(threeRegex);
+
+      let bestPacked = null, minZipLen = Infinity;
+      for (const abbr of [0, 32]) {
+        const packer = new Packer(
+          [{ data: codeToPack, type: 'js', action: 'eval' }],
+          { numAbbreviations: abbr, allowFreeVars: true }
+        );
+        await packer.optimize(1);
+        const { firstLine, secondLine } = packer.makeDecoder();
+        const packedJs = `${firstLine}\n${secondLine}`;
+
+        let testHtml = html;
+        if (threeMatch) {
+          testHtml = testHtml.replace(threeRegex, '');
+          testHtml = testHtml.replace(scriptFound.fullMatch, () => `${threeMatch[0]}<script>${packedJs}</script>`);
+        } else {
+          testHtml = testHtml.replace(scriptFound.fullMatch, () => `<script>${packedJs}</script>`);
+        }
+        testHtml = testHtml.replace(/\n\s*/g, '').replace(/>\s+</g, '><').trim();
+
+        const testZip = new JSZip();
+        testZip.file('index.html', testHtml, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
+        const testBuf = await testZip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 9 } });
+
+        if (testBuf.length < minZipLen) {
+          minZipLen = testBuf.length;
+          bestPacked = packedJs;
+        }
+      }
+      const packedJs = bestPacked;
+
+      console.log(`\x1b[32mRoadroller best packed JS size: ${Buffer.byteLength(packedJs, 'utf-8').toLocaleString()} bytes\x1b[0m`);
+
       if (threeMatch) {
         html = html.replace(threeRegex, '');
         html = html.replace(scriptFound.fullMatch, () => `${threeMatch[0]}<script>${packedJs}</script>`);

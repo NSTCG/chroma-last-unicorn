@@ -8,7 +8,7 @@ export function createVRHUD(scene, camera) {
   const tex = new T.CanvasTexture(canvas);
 
   const phoneGroup = Grp();
-  const bodyMesh = Msh(new T.BoxGeometry(.125, .245, .008), BMat({ color: 0x151520 }));
+  const bodyMesh = Msh(PGeo(.125, .245), BMat({ color: 0x151520 }));
   const screenMesh = Msh(PGeo(.118, .236), BMat({ map: tex, transparent: true, depthTest: false, depthWrite: false, side: 2 }));
   screenMesh.position.z = .0045;
   screenMesh.renderOrder = 999;
@@ -17,36 +17,38 @@ export function createVRHUD(scene, camera) {
   if (camera) camera.add(phoneGroup);
   else if (scene) scene.add(phoneGroup);
 
-  let title = 'CHROMA GUIDE', sub = 'Explore sanctuary...', act = 'Restore 7 Shards', collectedMask = 0;
+  let title = 'CHROMA', sub = '', act = '', collectedMask = 0;
   const shardColors = ['#f24', '#f70', '#fc0', '#1c4', '#0af', '#53e', '#c2e'];
 
   let callState = 'idle', callTimer = 0, talkStep = 0, onCallComplete = null, lastAction = 0;
-  const dialogueLines = [
-    'Remember chasing rainbows?',
-    'Warmth never left!',
-    'Break that shell now!'
-  ].map(s => `Maya: "${s}"`);
+  const dial = [
+    'Still at work? No IT talk on our road trip!',
+    'I packed the camera for the cliff overlook.',
+    'I love you so much. See you at home.'
+  ];
 
   const rr = (x, y, w, h, r = 20) => {
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+    ctx.roundRect(x, y, w, h, r);
     ctx.fill();
   };
 
   const wrapText = (text, x, y, maxW, lineH) => {
     if (!text) return y;
-    const words = text.split(' ');
-    let line = '';
-    for (let n = 0; n < words.length; n++) {
-      const test = line + words[n] + ' ';
-      if (ctx.measureText(test).width > maxW && n > 0) {
-        ctx.fillText(line, x, y);
-        line = words[n] + ' ';
-        y += lineH;
-      } else line = test;
+    for (const para of text.split('\n')) {
+      let line = '';
+      for (const word of para.split(' ')) {
+        const test = line + word + ' ';
+        if (ctx.measureText(test).width > maxW && line.length > 0) {
+          ctx.fillText(line, x, y);
+          line = word + ' ';
+          y += lineH;
+        } else line = test;
+      }
+      ctx.fillText(line, x, y);
+      y += lineH;
     }
-    ctx.fillText(line, x, y);
-    return y + lineH;
+    return y;
   };
 
   function redraw() {
@@ -55,56 +57,49 @@ export function createVRHUD(scene, camera) {
     rr(8, 8, 304, 524, 28);
     ctx.strokeStyle = '#64c8ff73'; ctx.lineWidth = 2.5; ctx.stroke();
 
-    // Top status bar
     ctx.fillStyle = '#fffa'; ctx.font = '13px sans-serif';
     ctx.fillText('🌈 CHROMA', 24, 38);
     ctx.textAlign = 'right'; ctx.fillText('100% ⚡', 296, 38); ctx.textAlign = 'left';
 
-    // Shard indicators
     for (let i = 0; i < 7; i++) {
       ctx.beginPath(); ctx.arc(70 + i * 26, 68, 7, 0, 6.28);
       ctx.fillStyle = (collectedMask & (1 << i)) ? shardColors[i] : '#222230';
       ctx.fill();
     }
 
-    // Main Card Body
     ctx.fillStyle = '#121222f0';
     rr(16, 92, 288, 412, 20);
 
     if (callState !== 'idle') {
-      const isLive = callState === 'talking', isRinging = callState === 'ringing';
-      ctx.fillStyle = isLive ? '#2ecc71' : '#ff79c6';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(isLive ? '🟢 CALL ACTIVE' : (isRinging ? '📞 DIALING...' : '📞 INCOMING'), 32, 122);
+      const end = callState === 'ending', live = callState === 'talking' || end, ring = callState === 'ringing', sc = end ? '#fd0' : (live ? '#2c7' : '#f7c');
+      ctx.fillStyle = sc; ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(end ? '💌 MAYA NOTE' : (live ? '🟢 CALL ACTIVE' : (ring ? '📞 DIALING...' : '📞 INCOMING')), 32, 122);
 
-      // Avatar
       ctx.beginPath(); ctx.arc(160, 178, 28, 0, 6.28);
       ctx.fillStyle = '#795290'; ctx.fill();
-      ctx.strokeStyle = isLive ? '#2ecc71' : '#ff79c6'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.strokeStyle = sc; ctx.lineWidth = 3; ctx.stroke();
       ctx.fillStyle = '#fff'; ctx.font = '22px sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('🌸', 160, 186);
 
       ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif';
       ctx.fillText('Maya', 160, 228);
 
-      ctx.fillStyle = isLive ? '#2ecc71' : '#a0d8ef'; ctx.font = '12px sans-serif';
-      ctx.fillText(isLive ? 'Connected 📶' : (isRinging ? 'Ringing... 📞' : 'Signal Active'), 160, 246);
+      ctx.fillStyle = end ? '#fd0' : (live ? '#2c7' : '#a0d8ef'); ctx.font = '12px sans-serif';
+      ctx.fillText(end ? 'Mind Palace 🌈' : (live ? 'Connected 📶' : (ring ? 'Ringing... 📞' : 'Signal Active')), 160, 246);
 
-      // Bubble
       ctx.textAlign = 'left';
       ctx.fillStyle = '#1c1c34d9';
-      rr(28, 262, 264, 154, 14);
+      rr(28, end ? 254 : 262, 264, end ? 172 : 154, 14);
       ctx.strokeStyle = '#64c8ff33'; ctx.lineWidth = 1.5; ctx.stroke();
 
-      ctx.fillStyle = '#fff'; ctx.font = '15px sans-serif';
-      wrapText(sub || title, 40, 290, 240, 22);
+      ctx.fillStyle = '#fff'; ctx.font = end ? '11px sans-serif' : '15px sans-serif';
+      wrapText(sub || title, end ? 36 : 40, end ? 270 : 290, end ? 248 : 240, end ? 16 : 22);
 
-      // Button
-      ctx.fillStyle = (callState === 'talking' && talkStep === 2) ? '#ff3366' : (callState === 'done' ? '#ffd700' : '#2ecc71');
+      ctx.fillStyle = (talkStep === 2) ? '#f36' : (end ? '#fd0' : '#2c7');
       rr(36, 436, 248, 44, 22);
 
       ctx.fillStyle = '#0a0a14'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(act || '▶ CONTINUE', 160, 463);
+      ctx.fillText(act || '🌈 RESTORED', 160, 463);
       ctx.textAlign = 'left';
     } else {
       ctx.fillStyle = '#ff79c6'; ctx.font = 'bold 12px sans-serif';
@@ -124,7 +119,6 @@ export function createVRHUD(scene, camera) {
       }
     }
 
-    // Force Three.js GPU texture upload
     tex.version++;
     tex.needsUpdate = true;
   }
@@ -148,10 +142,18 @@ export function createVRHUD(scene, camera) {
       redraw();
       if (pulseHaptics) pulseHaptics('right', 0.45, 80);
     },
+    showEndingNote: (msg) => {
+      callState = 'ending';
+      title = '🌸 Maya';
+      sub = msg;
+      act = '💖 PROMISE KEPT';
+      redraw();
+      if (pulseHaptics) pulseHaptics('both', 0.9, 300);
+    },
     startCallTask: (shard, onComplete) => {
       callState = 'offer';
       onCallComplete = onComplete;
-      hud.show('📞 MISSION: WARMTH', 'Maya is waiting...', 'Press [X] to Accept');
+      hud.show('📞 SAVED VOICEMAIL', 'Maya • Audio Archive', 'Press [X] to Listen');
     },
     triggerCallAction: () => {
       const now = performance.now();
@@ -161,29 +163,29 @@ export function createVRHUD(scene, camera) {
 
       if (callState === 'offer') {
         callState = 'accepted';
-        hud.show('📞 READY TO CALL', 'Reconnect with Maya...', 'Press [X] to Dial');
+        hud.show('📞 PLAYING VOICEMAIL', 'Listening to Maya...', 'Press [X] to Play');
       } else if (callState === 'accepted') {
         callState = 'ringing';
         callTimer = 0;
         audio.playRingtone();
-        hud.show('DIALING MAYA...', 'Ring... Ring... 📞', 'Press [X] to Answer');
+        hud.show('BUFFERING AUDIO...', 'Connecting memory...', 'Press [X] to Hear');
       } else if (callState === 'ringing') {
         callState = 'talking';
         talkStep = 0;
         audio.playPeacefulChords();
         audio.playMumble(380);
-        hud.show('📞 MAYA ON CALL', dialogueLines[0], 'Press [X] to Continue');
+        hud.show('📞 MAYA VOICEMAIL', dial[0], 'Press [X] to Continue');
       } else if (callState === 'talking') {
         talkStep++;
         if (talkStep < 3) {
           audio.playMumble(380 + talkStep * 20);
-          hud.show('📞 MAYA ON CALL', dialogueLines[talkStep], talkStep === 2 ? 'Press [X] to Shatter Shell' : 'Press [X] to Continue');
+          hud.show('📞 MAYA VOICEMAIL', dial[talkStep], talkStep === 2 ? 'Press [X] to Shatter Guilt' : 'Press [X] to Continue');
         } else {
           callState = 'idle';
           if (pulseHaptics) pulseHaptics('both', 0.9, 250);
           audio.playPluck(880, 0.6, 0.3);
           if (onCallComplete) onCallComplete();
-          hud.show('✨ SHELL SHATTERED!', 'Warmth reconnected.', 'Punch / Click to collect!');
+          hud.show('✨ GUILT SHATTERED!', 'Her voice breaks the silence.', 'Punch / Click crystal!');
         }
       }
     },
@@ -201,7 +203,7 @@ export function createVRHUD(scene, camera) {
           talkStep = 0;
           audio.playPeacefulChords();
           audio.playMumble(380);
-          hud.show('📞 MAYA ON CALL', dialogueLines[0], 'Press [X] to Continue');
+          hud.show('📞 MAYA ON CALL', dial[0], 'Press [X] to Continue');
         }
       }
 

@@ -32,14 +32,14 @@ export function createNarrative(game) {
       mgr.act = 0;
       game.setAwakened(1);
       moveCam(getSlidePoint(1), getSlidePoint(0.96));
-      game.vrHud?.show('🌈 CHROMA', 'Slide to begin!', 'Trigger / Click to Slide');
+      game.vrHud?.show('2:43 AM • TERMINAL', 'Desk cold. Numb with grief since the cliff... Maya calls from the dream valley.', 'Trigger / Click to Enter');
     },
     triggerSlide() {
       if (isSliding || mgr.act !== 0) return;
       isSliding = true;
       slideProgress = 0;
       audio.tone('sine', 480, 0.3, 0.08);
-      game.vrHud?.show('HOLD ON!', 'Whee!');
+      game.vrHud?.show('THE VALLEY', 'Descending to where you lost her...');
     },
     onShardCollected() {
       mgr.collectedCount++;
@@ -50,13 +50,16 @@ export function createNarrative(game) {
           mgr.act = 3;
           game.setAwakened(1);
           audio.playAscent();
-          game.vrHud?.show('✨ AWAKENED', 'Wonder returned');
+          audio.playFeelGoodEnding();
+          game.vrHud?.show('✨ AWAKENED', 'Her love restores our world!');
           game.unicornState = 'gallop';
           setTimeout(() => {
             mgr.act = 4;
-            game.vrHud?.show('🌈 ASCENSION', 'Remembered');
             game.unicornState = 'ascend';
-          }, 2500);
+            game.vrHud?.showEndingNote?.(
+              "Our horse can fly! 🦄\nI didn't save you from that cliff for you to live in grey.\nStop drowning in deadlines. Chase fireflies.\nWhen it rains, find me in the rainbow.\nLive with color again, my love... I'm always in your mind palace. 🌸🌈"
+            );
+          }, 2800);
         }, 800);
       }
     },
@@ -73,7 +76,7 @@ export function createNarrative(game) {
         mgr.act = 1;
         game.setAwakened(0);
         moveCam(V3(0, 1.7, 5), V3(0, 1.7, -12));
-        game.vrHud?.show('💔 LOST COLORS', 'Restore 7 Shards!');
+        game.vrHud?.show('💔 COLORLESS GRIEF', 'Awaken 7 memories of Maya to heal.');
       }
     }
   };

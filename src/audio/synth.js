@@ -47,7 +47,7 @@ export const audio = {
       if (!ctx || ctx.state !== 'running') return;
       step = (step + 1) % 16;
       if (windFilter) windFilter.frequency.value = 340 + Math.sin(performance.now() * 0.0008) * 220;
-      if (awakenedLevel > 0.15 && step % 2 === 0) tone('triangle', scale[(step / 2) % 8] * (step % 4 === 0 ? 2 : 1), 0.25, 0.16);
+      if (awakenedLevel > 0.15 && step % 2 === 0) tone('triangle', scale[(step >> 1) % 8] * (step % 4 === 0 ? 2 : 1), 0.25, 0.16);
       if (awakenedLevel > 0.45 && step % 2 === 1) tone('triangle', scale[(step * 3) % 8] * 2, 0.15, 0.12);
     }, 280);
   },
@@ -62,13 +62,14 @@ export const audio = {
     [1, 1.5, 2].forEach((m, i) => tone('sine', bf * m, 1.6, 0.26 / (i + 1)));
   },
   playResonate() { tone('triangle', 115, 0.35, 0.32, 135); },
-  playRingtone() {
-    [0, 900].forEach(d => setTimeout(() => tone('sine', 440, 0.7, 0.2), d));
-  },
+  playRingtone() { [0, 900].forEach(d => setTimeout(() => tone('sine', 440, 0.7, 0.2), d)); },
   playMumble(p = 380) { tone('triangle', p + (Math.random() - 0.5) * 50, 0.08, 0.18, p * 0.9); },
   playPeacefulChords() { [330, 392, 494, 587].forEach((f, i) => setTimeout(() => tone('sine', f, 2.5, 0.08), i * 150)); },
   playPluck(freq, dur, gain) { tone('triangle', freq, dur, gain, freq * 0.5); },
   playAscent() { scale.forEach((n, i) => setTimeout(() => tone('triangle', n, 1.6, 0.22), i * 150)); },
+  playFeelGoodEnding() {
+    [262, 330, 392, 523, 349, 440, 523, 698, 392, 494, 587, 784, 523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone('sine', f, 1.8, 0.16 / ((i % 4) + 1)), (i >> 2) * 750 + (i % 4) * 120));
+  },
   setAwakened(val) {
     awakenedLevel = val;
     if (droneFilter) droneFilter.frequency.value = 160 + val * 640;

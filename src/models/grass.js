@@ -35,7 +35,7 @@ function createTaperedBladeGeometry(width = 0.72, height = 1.95) {
 
 export function createGrassField(scene, count = 46000) {
   const grassTex = createDenseGrassTexture();
-  const bladeGeo = createTaperedBladeGeometry(0.72, 1.95);
+  const bladeGeo = createTaperedBladeGeometry();
 
   const uniforms = {
     uTime: { value: 0 },
@@ -44,8 +44,8 @@ export function createGrassField(scene, count = 46000) {
   };
 
   const mat = SMat({
-    vertexShader: `uniform float uTime;varying vec2 vUv;varying vec3 vWP,vVP,vAnchorWP;varying float vH;void main(){vUv=uv;vH=uv.y;vAnchorWP=(instanceMatrix*vec4(0.,0.,0.,1.)).xyz;vec4 wp=instanceMatrix*vec4(position,1.);float t=uTime,g=sin(wp.x*.06+wp.z*.05+t*2.2)*.85+sin(wp.x*.14-wp.z*.1+t*4.2)*.45,w=(sin(wp.x*.12+wp.z*.09+t*2.8)+sin(wp.x*.3-wp.z*.22+t*5.)*.45)*.48+g*.68,b=pow(vH,1.7)*w;wp.x+=b;wp.z+=b*.75;wp.y-=abs(b)*.22*vH;float c=sin(wp.x*2.5+wp.z*1.8);wp.xz+=vec2(cos(c),sin(c))*(vH*.28);vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(wp.xyz,1.);vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
-    fragmentShader: `precision highp float;uniform sampler2D uGrassMap;uniform float uTime,uAwakened;varying vec2 vUv;varying vec3 vWP,vVP,vAnchorWP;varying float vH;${glslGround}${glslRainbow}void main(){vec4 tex=texture2D(uGrassMap,vUv);float bFade=smoothstep(0.,.18,vH);if(tex.a<.45||bFade<.02)discard;vec3 groundLit=gCol(vWP.xz,uTime,uAwakened);float bVar=sin(vWP.x*.18+1.2)*cos(vWP.z*.18+.8)*.5+.5,dist=length(vVP);vec3 tipA=mix(vec3(.05,.23,.07),vec3(.22,.51,.19),bVar),tipG=mix(vec3(.09,.09,.11),vec3(.22,.22,.27),bVar),tipF=mix(tipG,tipA,uAwakened)*1.1,col=mix(groundLit,tipF,smoothstep(.2,.92,vH));float flwMask=step(.93,sin(vAnchorWP.x*2.3+vAnchorWP.z*3.1)*cos(vAnchorWP.z*1.9-vAnchorWP.x*2.7))*step(.9,tex.r*tex.b),flwFade=(1.-smoothstep(10.,28.,dist))*smoothstep(.42,.85,vH);vec3 flwCol=mix(vec3(.98,.98,.98),rb(vAnchorWP.x*.06+vAnchorWP.z*.06)*1.12,uAwakened*.75);col=mix(mix(col,flwCol,flwMask*.85*flwFade),groundLit,smoothstep(16.,52.,dist));float alpha=(1.-smoothstep(55.,135.,dist))*bFade;if(alpha<.01)discard;gl_FragColor=vec4(col,alpha);}`,
+    vertexShader: `uniform float uTime;varying vec2 vUv;varying vec3 vWP,vVP,vAnchorWP;varying float vH;void main(){vUv=uv;vH=uv.y;vAnchorWP=(instanceMatrix*vec4(0.,0.,0.,1.)).xyz;vec4 wp=instanceMatrix*vec4(position,1.);float t=uTime,w=(sin(wp.x*.12+wp.z*.09+t*2.8)+sin(wp.x*.3-wp.z*.22+t*5.)*.45)*.48+sin(wp.x*.06+wp.z*.05+t*2.2)*.6,b=pow(vH,1.7)*w;wp.x+=b;wp.z+=b*.75;wp.y-=abs(b)*.22*vH;vWP=wp.xyz;vec4 mv=modelViewMatrix*vec4(wp.xyz,1.);vVP=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `precision highp float;uniform sampler2D uGrassMap;uniform float uTime,uAwakened;varying vec2 vUv;varying vec3 vWP,vVP,vAnchorWP;varying float vH;${glslGround}${glslRainbow}void main(){vec4 tex=texture2D(uGrassMap,vUv);float bFade=smoothstep(0.,.18,vH);if(tex.a<.45||bFade<.02)discard;vec3 groundLit=gCol(vWP.xz,uTime,uAwakened);float bVar=sin(vWP.x*.18+1.2)*cos(vWP.z*.18+.8)*.5+.5,dist=length(vVP);vec3 tipA=mix(vec3(.05,.23,.07),vec3(.22,.51,.19),bVar),tipG=mix(vec3(.09,.09,.11),vec3(.22,.22,.27),bVar),tipF=mix(tipG,tipA,uAwakened)*1.1,col=mix(groundLit,tipF,smoothstep(.2,.92,vH));float flwMask=step(.93,sin(vAnchorWP.x*2.3+vAnchorWP.z*3.1))*step(.9,tex.r*tex.b),flwFade=(1.-smoothstep(10.,28.,dist))*smoothstep(.42,.85,vH);vec3 flwCol=mix(vec3(.98),rb(vAnchorWP.x*.06+vAnchorWP.z*.06)*1.12,uAwakened*.75);col=mix(mix(col,flwCol,flwMask*.85*flwFade),groundLit,smoothstep(16.,52.,dist));float alpha=(1.-smoothstep(55.,135.,dist))*bFade;if(alpha<.01)discard;gl_FragColor=vec4(col,alpha);}`,
     uniforms,
     side: 2, transparent: true, depthWrite: true
   });

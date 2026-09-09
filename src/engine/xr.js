@@ -1,6 +1,6 @@
 import { getHit } from './controls.js';
 import { updateRiding, updateWalking } from './movement.js';
-import { T, Grp, V3 } from './three.js';
+import { T, Grp, V3, BMat } from './three.js';
 
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState, vrHud) {
   renderer.xr.enabled = true;
@@ -26,11 +26,18 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     }
   };
 
+  const castRay = (c) => {
+    tempMatrix.identity().extractRotation(c.matrixWorld);
+    raycaster.ray.origin.setFromMatrixPosition(c.matrixWorld);
+    raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+    return raycaster.intersectObjects(getInteractiveObjects(), true);
+  };
+
   let leftCtrl = null, rightCtrl = null;
 
   for (let i = 0; i < 2; i++) {
     const controller = renderer.xr.getController(i);
-    const laser = new T.Line(laserGeo, new T.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 }));
+    const laser = new T.Line(laserGeo, BMat({ color: 0x00ffff, transparent: true, opacity: 0.8 }));
     laser.scale.z = 25;
     controller.add(laser);
 
@@ -41,10 +48,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
 
     controller.addEventListener('selectstart', () => {
       if (onActZeroTrigger) onActZeroTrigger();
-      tempMatrix.identity().extractRotation(controller.matrixWorld);
-      raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-      raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-      onSelectObject(getHit(raycaster.intersectObjects(getInteractiveObjects(), true)));
+      onSelectObject(getHit(castRay(controller)));
     });
 
     xrGroup.add(controller);
@@ -70,7 +74,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   };
 
   let snapTurnCooldown = 0;
-  const timers = { foot: 0, hoof: 0 };
+  const timers = { foot: 0, hoof: 0, haptics: pulseHaptics };
   const forwardVec = V3(0, 0, 0), rightVec = V3(0, 0, 0), currentPos = V3(0, 0, 0), vrMoveDir = V3(0, 0, 0);
 
   return {
@@ -78,6 +82,8 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
     xrGroup,
     startVR,
     pulseHaptics,
+    getLeftController: () => leftCtrl,
+    getRightController: () => rightCtrl,
     update: (delta) => {
       const session = renderer.xr.getSession();
       if (snapTurnCooldown > 0) snapTurnCooldown -= delta;
@@ -110,13 +116,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
 
           if (!source.gamepad?.axes) continue;
           const axes = source.gamepad.axes;
-          let ax = 0, ay = 0;
-          if (axes.length >= 4) {
-            ax = Math.abs(axes[2]) > 0.08 ? axes[2] : (Math.abs(axes[0]) > 0.08 ? axes[0] : 0);
-            ay = Math.abs(axes[3]) > 0.08 ? axes[3] : (Math.abs(axes[1]) > 0.08 ? axes[1] : 0);
-          } else if (axes.length >= 2) {
-            ax = axes[0]; ay = axes[1];
-          }
+          const ax = axes[2] ?? axes[0] ?? 0, ay = axes[3] ?? axes[1] ?? 0;
 
           if (source.handedness === 'left') {
             if (Math.abs(ay) > 0.12) vrMoveDir.addScaledVector(forwardVec, -ay);
@@ -138,16 +138,12 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
         }
       }
 
-      controllers.forEach((controller) => {
-        tempMatrix.identity().extractRotation(controller.matrixWorld);
-        raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-        raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-        const hits = raycaster.intersectObjects(getInteractiveObjects(), true);
-        const laser = controller.children[0];
-        if (laser?.material) {
-          const hit = hits[0]?.distance < 30;
-          laser.material.color.setHex(hit ? 0xff0077 : 0x00ffff);
-          laser.scale.z = hit ? hits[0].distance : 25;
+      controllers.forEach((c) => {
+        const hits = castRay(c), l = c.children[0];
+        if (l?.material) {
+          const h = hits[0]?.distance < 30;
+          l.material.color.setHex(h ? 0xff0077 : 0x00ffff);
+          l.scale.z = h ? hits[0].distance : 25;
         }
       });
     },

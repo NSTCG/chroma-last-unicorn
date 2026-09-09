@@ -6,17 +6,19 @@ export function updateRiding(moveDir, unicorn, obj, delta, isVR, rot, timers) {
   if (isMoving) {
     moveDir.normalize();
     timers.hoof += delta;
-    if (timers.hoof > 0.28) { timers.hoof = 0; audio.playHoofbeat(); }
+    if (timers.hoof > 0.28) {
+      timers.hoof = 0;
+      audio.playHoofbeat();
+      if (timers.haptics) timers.haptics('both', 0.28, 55);
+    }
     const targetYaw = Math.atan2(-moveDir.x, -moveDir.z);
-    let diff = targetYaw - (isVR ? rot.rotation.y : rot.y);
-    while (diff < -Math.PI) diff += Math.PI * 2;
-    while (diff > Math.PI) diff -= Math.PI * 2;
+    let diff = (targetYaw - (isVR ? rot.rotation.y : rot.y) + 3.14) % 6.28 - 3.14;
     if (isVR) rot.rotation.y += diff * Math.min(1, delta * 1.2);
     else { rot.y += diff * Math.min(1, delta * 2.0); obj.quaternion.setFromEuler(rot); }
   }
   unicorn.move(moveDir, delta);
   unicorn.update(delta, isMoving ? 'gallop' : 'idle');
-  obj.position.set(unicorn.group.position.x, unicorn.group.position.y + (isVR ? 2.1 : 2.2), unicorn.group.position.z);
+  obj.position.set(unicorn.group.position.x, unicorn.group.position.y + (isVR ? 1.25 : 1.85), unicorn.group.position.z);
 }
 
 export function updateWalking(moveDir, obj, delta, isVR, timers) {

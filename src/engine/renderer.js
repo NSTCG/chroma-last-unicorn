@@ -27,14 +27,11 @@ export function createRenderer() {
     renderer.setSize(innerWidth, innerHeight);
   });
 
-  const greyAmb = Col(0x75788c), atmoAmb = Col(0xb274a2);
-  const greyHemiSky = Col(0x9aa4ca), atmoHemiSky = Col(0xdca0cb);
-
   return {
     scene, camera, renderer,
     setAwakened: (val) => {
-      ambientLight.color.lerpColors(greyAmb, atmoAmb, val);
-      hemiLight.color.lerpColors(greyHemiSky, atmoHemiSky, val);
+      ambientLight.color.lerpColors(Col(0x75788c), Col(0xb274a2), val);
+      hemiLight.color.lerpColors(Col(0x9aa4ca), Col(0xdca0cb), val);
     }
   };
 }

@@ -16,8 +16,8 @@ export function createParticleSystem(scene, count = 1200) {
 
   const uniforms = { uTime: { value: 0 }, uAwakened: { value: 0.1 } };
   const mat = SMat({
-    vertexShader: `uniform float uTime,uAwakened;varying vec3 vCol;${glslRainbow}void main(){vec3 p=position;p.y+=sin(uTime*1.5+p.x*.2)*.6;p.x+=cos(uTime+p.z*.2)*.5;vCol=mix(vec3(.85),rb(p.x*.06+uTime*.15),uAwakened);vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=clamp(110./-mv.z,3.,45.);gl_Position=projectionMatrix*mv;}`,
-    fragmentShader: `precision highp float;varying vec3 vCol;void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;gl_FragColor=vec4(vCol,(1.-d*2.)*.85);}`,
+    vertexShader: `uniform float uTime,uAwakened;varying vec3 vCol;${glslRainbow}void main(){vec3 p=position;p.y+=sin(uTime*1.5+p.x*.2)*.6;vCol=mix(vec3(.85),rb(p.x*.06+uTime*.15),uAwakened);vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=clamp(110./-mv.z,3.,45.);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `precision highp float;varying vec3 vCol;void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;gl_FragColor=vec4(vCol,1.-d*2.);}`,
     uniforms,
     transparent: true,
     blending: 2,
