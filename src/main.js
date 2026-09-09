@@ -113,8 +113,13 @@ function initGame() {
   return gameObj;
 }
 
+function boot() {
+  if (window.THREE) window.game = initGame();
+  else setTimeout(boot, 16);
+}
+
 if (document.readyState === 'loading') {
-  window.addEventListener('DOMContentLoaded', () => { window.game = initGame(); });
+  window.addEventListener('DOMContentLoaded', boot);
 } else {
-  window.game = initGame();
+  boot();
 }

@@ -89,8 +89,15 @@ async function runBuildPipeline() {
 
       console.log(`\x1b[32mRoadroller packed JS size: ${Buffer.byteLength(packedJs, 'utf-8').toLocaleString()} bytes\x1b[0m`);
 
-      // Replace with packed script (use function callback to prevent $ pattern corruption)
-      html = html.replace(scriptFound.fullMatch, () => `<script>${packedJs}</script>`);
+      // Ensure Three.js CDN script is placed BEFORE the packed game script
+      const threeRegex = /<script\b[^>]*src=[^>]*three[^>]*><\/script>/i;
+      const threeMatch = html.match(threeRegex);
+      if (threeMatch) {
+        html = html.replace(threeRegex, '');
+        html = html.replace(scriptFound.fullMatch, () => `${threeMatch[0]}<script>${packedJs}</script>`);
+      } else {
+        html = html.replace(scriptFound.fullMatch, () => `<script>${packedJs}</script>`);
+      }
       
       // Minify HTML structure
       html = html
