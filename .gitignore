@@ -34,3 +34,7 @@ Thumbs.db
 # We explicitly INCLUDE dist/ so Netlify / static hosts can serve pre-built bundles directly
 !dist/
 !dist/**
+
+# Local tools & test scratch
+.tools/
+scratch/

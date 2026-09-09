@@ -9,6 +9,14 @@
  */
 
 import { execSync, spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+
+let adbCmd = 'adb';
+const localAdb = path.resolve('.tools/platform-tools/adb.exe');
+if (fs.existsSync(localAdb)) {
+  adbCmd = `"${localAdb}"`;
+}
 
 const isPreview = process.argv.includes('--preview');
 const isOpenOnly = process.argv.includes('--open-only');
@@ -31,7 +39,7 @@ console.log('   META QUEST USB ADB DEV & BROWSER LAUNCHER');
 console.log('═══════════════════════════════════════════════════════\n');
 
 // 1. Check for connected ADB devices
-const devicesOutput = run('adb devices') || '';
+const devicesOutput = run(`${adbCmd} devices`) || '';
 const lines = devicesOutput.split('\n').filter(l => l.trim().length > 0);
 const devices = lines.slice(1).map(l => l.split('\t')).filter(parts => parts.length >= 2);
 
@@ -51,7 +59,7 @@ if (!activeDevice) {
   
   // 2. Set up ADB reverse port forwarding
   console.log(`🔌 Setting up USB reverse proxy for port ${port}...`);
-  run(`adb -s ${activeDevice[0]} reverse tcp:${port} tcp:${port}`);
+  run(`${adbCmd} -s ${activeDevice[0]} reverse tcp:${port} tcp:${port}`);
   console.log(`🌐 Quest can now access ${url} directly via USB cable!\n`);
 }
 
@@ -65,13 +73,13 @@ function launchBrowserTab() {
   
   // Method 1: Target Oculus Browser directly
   const res = run(
-    `adb -s ${activeDevice[0]} shell am start -a android.intent.action.VIEW -d "${url}" -n com.oculus.browser/.MainActivity`,
+    `${adbCmd} -s ${activeDevice[0]} shell am start -a android.intent.action.VIEW -d "${url}" -n com.oculus.browser/.MainActivity`,
     true
   );
 
   // Method 2: Generic VIEW Intent fallback if component name differs
   if (!res || res.includes('Error')) {
-    run(`adb -s ${activeDevice[0]} shell am start -a android.intent.action.VIEW -d "${url}"`, true);
+    run(`${adbCmd} -s ${activeDevice[0]} shell am start -a android.intent.action.VIEW -d "${url}"`, true);
   }
 
   console.log(`🎉 Quest Browser opened to ${url}!\n`);
