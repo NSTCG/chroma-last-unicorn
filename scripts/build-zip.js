@@ -55,7 +55,7 @@ async function runBuildPipeline() {
           unsafe_methods: true,
           unsafe_proto: true,
           unsafe_undefined: true,
-          booleans_as_integers: true,
+          booleans_as_integers: false,
           hoist_funs: true,
           hoist_vars: true,
           reduce_vars: true,

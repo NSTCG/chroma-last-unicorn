@@ -5,7 +5,7 @@ export function createRenderer() {
   const camera = new T.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000);
   camera.position.set(0, 1.7, 5);
 
-  const renderer = new T.WebGLRenderer({ powerPreference: 'high-performance' });
+  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.xr.enabled = true;
@@ -18,7 +18,7 @@ export function createRenderer() {
 
   const pointLight = new T.PointLight(0xff55aa, 1.8, 40);
   pointLight.position.set(0, 3, -12);
-  scene.add(ambientLight, hemiLight, sunLight, pointLight, camera);
+  scene.add(ambientLight, hemiLight, sunLight, pointLight);
 
   window.addEventListener('resize', () => {
     if (renderer.xr.isPresenting) return;

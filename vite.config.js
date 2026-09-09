@@ -47,7 +47,7 @@ export default defineConfig(({ mode }) => {
           hoist_funs: true,
           hoist_vars: true,
           reduce_vars: true,
-          booleans_as_integers: true
+          booleans_as_integers: false
         },
         mangle: {
           toplevel: true,

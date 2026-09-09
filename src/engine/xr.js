@@ -5,6 +5,9 @@ import { T, Grp, V3 } from './three.js';
 export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelectObject, onPunchCheck, onActZeroTrigger, getUnicornState, vrHud) {
   renderer.xr.enabled = true;
   try { renderer.xr.setReferenceSpaceType('local-floor'); } catch (_) {}
+  renderer.xr.addEventListener('sessionstart', () => {
+    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1); } catch (_) {}
+  });
 
   const xrGroup = Grp();
   scene.add(xrGroup);
