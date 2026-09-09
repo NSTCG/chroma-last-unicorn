@@ -7,6 +7,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   try { renderer.xr.setReferenceSpaceType('local-floor'); } catch (_) {}
   renderer.xr.addEventListener('sessionstart', () => {
     try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1); } catch (_) {}
+    try { renderer.xr.getSession()?.updateTargetFrameRate?.(72); } catch (_) {}
   });
 
   const xrGroup = Grp();
@@ -57,7 +58,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       });
       xrGroup.position.copy(camera.position);
-      xrGroup.position.y -= 1.6;
+      xrGroup.position.y = Math.max(0.75, xrGroup.position.y - 1.2);
       camera.position.set(0, 0, 0);
       camera.quaternion.identity();
       camera.updateMatrixWorld(true);

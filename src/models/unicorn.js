@@ -95,10 +95,10 @@ export function createUnicorn(scene) {
     setAwakened: (val) => { uniforms.uColorAwakened.value = val; },
     move: (moveVector, delta) => {
       if (moveVector.lengthSq() > 0.001) {
-        group.position.addScaledVector(moveVector, 12.5 * delta);
+        group.position.addScaledVector(moveVector, 11 * delta);
         const targetAngle = Math.atan2(moveVector.x, moveVector.z);
         let diff = (targetAngle - currentHeading + 3.14) % 6.28 - 3.14;
-        currentHeading += diff * Math.min(1, delta * 12);
+        currentHeading += diff * Math.min(1, delta * 2.5);
         group.rotation.y = currentHeading;
       }
       group.position.y = getTerrainHeight(group.position.x, group.position.z) + 1;

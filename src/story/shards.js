@@ -37,7 +37,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   const shellGeo = new T.IcosahedronGeometry(1.6, 1);
   const beaconGeo = CGeo(.06, .6, 50, 4);
   beaconGeo.translate(0, 25, 0);
-  const fragGeo = new T.DodecahedronGeometry(0.38);
+  const fragGeo = new T.DodecahedronGeometry(0.42);
   const breakFragments = [];
 
   const rnd = () => Math.random() - .5;
@@ -265,7 +265,12 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
             vrHud?.show('🕊️ PEACE: STILLNESS', 'Breathe with sanctuary...', `Stillness: ${(activeTask.timer).toFixed(1)}s / 2.5s`);
             if (activeTask.timer >= 2.5) unlockShard(s);
           } else if (activeTask.type === 'mystery') {
-            taskGroup.rotation.y += delta * 1.2;
+            activeTask.rotY = (activeTask.rotY || 0) + delta * 0.32;
+            const sx = s.data.pos[0], sy = s.data.pos[1], sz = s.data.pos[2];
+            taskGroup.children.forEach((node, i) => {
+              const a = activeTask.rotY + (i / 3) * 6.28;
+              node.position.set(sx + Math.cos(a) * 1.8, sy + (i - 1) * 0.45, sz + Math.sin(a) * 1.8);
+            });
           }
         }
       }
