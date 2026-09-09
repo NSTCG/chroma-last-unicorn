@@ -38,6 +38,7 @@ export function createUnicorn(scene) {
       }
     }
     if (tip) verts.push(...tip);
+    const nRings = rings.length / 3;
     for (let r = 0; r < nRings - 1; r++) {
       const r0 = r * segs, r1 = r0 + segs;
       for (let i = 0; i < segs; i++) {
