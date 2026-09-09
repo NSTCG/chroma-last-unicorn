@@ -39,7 +39,6 @@ export function createWorld(scene) {
   groundGeo.computeVertexNormals();
   const ground = Msh(groundGeo, groundMat);
   ground.position.set(0, 0, -12);
-  ground.receiveShadow = true;
   worldGroup.add(ground);
 
   const altar = Msh(CGeo(8, 9.5, 0.8, 8), stoneMat);
@@ -67,7 +66,6 @@ export function createWorld(scene) {
     const rockMat = createRockMaterial(d.color);
     materials.push(rockMat);
     const m = Msh(islGeo, rockMat);
-    m.castShadow = m.receiveShadow = true;
     g.add(m);
     worldGroup.add(g);
     return { g, y, seed: Math.random() * 100 };

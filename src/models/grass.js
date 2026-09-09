@@ -52,7 +52,6 @@ export function createGrassField(scene, count = 46000) {
 
   const mesh = new T.InstancedMesh(bladeGeo, mat, count);
   mesh.renderOrder = 1;
-  mesh.receiveShadow = true;
 
   const dummy = new T.Object3D();
   for (let placed = 0; placed < count; placed++) {

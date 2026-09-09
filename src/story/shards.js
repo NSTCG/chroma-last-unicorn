@@ -59,7 +59,6 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
 
     const shell = Msh(shellGeo, createOrbMaterial(data.color));
     shell.position.copy(core.position);
-    core.castShadow = true;
 
     const light = new T.PointLight(data.color, 2.2, 22);
     light.position.copy(core.position);

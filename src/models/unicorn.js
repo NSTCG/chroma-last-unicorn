@@ -142,7 +142,6 @@ export function createUnicorn(scene) {
   hitbox.userData = { isUnicorn: true, unicorn: unicornObj, data: { isUnicorn: true } };
   group.traverse((obj) => {
     if (obj.isMesh) {
-      if (obj !== hitbox) obj.castShadow = true;
       obj.userData = hitbox.userData;
     }
   });
