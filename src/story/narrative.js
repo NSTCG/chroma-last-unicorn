@@ -16,7 +16,7 @@ export function createNarrative(game) {
       const xg = game.xr?.xrGroup;
       if (xg) {
         xg.position.set(pos.x, pos.y - 1.6, pos.z);
-        xg.rotation.y = Math.atan2(lookTarget.x - pos.x, lookTarget.z - pos.z);
+        xg.rotation.y = Math.atan2(pos.x - lookTarget.x, pos.z - lookTarget.z);
       }
     } else {
       game.camera.position.copy(pos);

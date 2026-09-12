@@ -17,7 +17,7 @@ export function createWorld(scene) {
   const createRockMaterial = (tint = 0x8e9aa8) => SMat({
     uniforms: { ...groundUniforms, uTint: { value: Col(tint) } },
     vertexShader: stdVS,
-    fragmentShader: `precision highp float;uniform float uAwakened;uniform vec3 uTint;varying vec3 vWP,vN,vV;void main(){vec3 N=normalize(vN),V=normalize(vV),p=vWP*.35,w=abs(fract(p+sin(p.yzx*3.2)*.35)-.5);float d=max(dot(N,vec3(.35,.8,.45)),0.)*.6+.4,crk=smoothstep(.04,.22,min(w.x+w.y,min(w.y+w.z,w.x+w.z))),slb=fract(sin(dot(floor(p*1.5),vec3(12.9,78.2,45.3)))*4375.8)*.3+.7,r=pow(1.-max(dot(N,V),0.),3.)*.4;vec3 rock=mix(vec3(.16),vec3(.44),uAwakened)*d*slb*crk,col=mix(rock,rock*uTint*1.5,.55)+r*uTint*crk;gl_FragColor=vec4(col,1.-smoothstep(70.,165.,length(vV)));}`,
+    fragmentShader: `precision highp float;uniform float uAwakened;uniform vec3 uTint;varying vec3 vWP,vN,vV;void main(){vec3 N=normalize(vN),V=normalize(vV),p=vWP*.45;float n=sin(p.x*2.5+sin(p.y*2.2+p.z*2.8))*.2+sin(p.y*6.+sin(p.x*4.5-p.z*5.))*.08+sin(vWP.x*16.+sin(vWP.y*14.+vWP.z*15.))*.04+.85,d=max(dot(N,vec3(.35,.8,.45)),0.)*.65+.35,top=clamp(N.y*.5+.5,0.,1.),rim=pow(1.-max(dot(N,V),0.),3.)*.35,occ=clamp(n*1.2-.2,.25,1.);vec3 base=mix(vec3(.12,.13,.16),vec3(.42,.44,.47),n*d*mix(.75,1.2,top)),col=mix(base,base*uTint*1.45,.52)*mix(vec3(.35),vec3(1),mix(.3,1.,uAwakened))*occ+rim*uTint*occ;gl_FragColor=vec4(col,1.-smoothstep(70.,165.,length(vV)));}`,
     side: 2, transparent: true, depthWrite: true
   });
 
