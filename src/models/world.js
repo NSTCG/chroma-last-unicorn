@@ -14,15 +14,14 @@ export function createWorld(scene) {
 
   const groundUniforms = { uTime: { value: 0 }, uAwakened: { value: 0 } };
 
-  const createRockMaterial = (tint = 0xffffff) => SMat({
+  const createRockMaterial = (tint = 0x8e9aa8) => SMat({
     uniforms: { ...groundUniforms, uTint: { value: Col(tint) } },
     vertexShader: stdVS,
-    fragmentShader: `precision highp float;uniform float uTime,uAwakened;uniform vec3 uTint;varying vec3 vV,vN;void main(){vec3 N=normalize(vN),V=normalize(vV);float d=max(dot(N,vec3(.3,.8,.5)),0.),cel=smoothstep(-.1,.1,d)*.4+.6,rim=pow(1.-max(dot(N,V),0.),3.)*.45;vec3 base=mix(vec3(.18),vec3(.44),uAwakened),col=mix(base*uTint,base,.35)*cel+vec3(.1)*rim;gl_FragColor=vec4(col,1.-smoothstep(70.,165.,length(vV)));}`,
+    fragmentShader: `precision highp float;uniform float uAwakened;uniform vec3 uTint;varying vec3 vWP,vN,vV;void main(){vec3 N=normalize(vN),V=normalize(vV);float d=max(dot(N,vec3(.35,.8,.45)),0.)*.6+.4,s=sin(vWP.y*2.+sin(vWP.x+vWP.z)*2.)*.15+.85,r=pow(1.-max(dot(N,V),0.),3.)*.4;vec3 col=mix(vec3(.18),vec3(.42),uAwakened)*s*d*mix(uTint,vec3(1),.35)+r*uTint;gl_FragColor=vec4(col,1.-smoothstep(70.,165.,length(vV)));}`,
     side: 2, transparent: true, depthWrite: true
   });
 
-  const stoneMat = createRockMaterial(0x90909e);
-  const materials = [stoneMat];
+  const stoneMat = createRockMaterial(0x8e9aa8);
 
   const groundMat = SMat({
     uniforms: groundUniforms,
@@ -62,7 +61,6 @@ export function createWorld(scene) {
     const g = Grp(), y = d.pos[1] - 3;
     g.position.set(d.pos[0], y, d.pos[2]);
     const rockMat = createRockMaterial(d.color);
-    materials.push(rockMat);
     const m = Msh(islGeo, rockMat);
     g.add(m);
     worldGroup.add(g);
