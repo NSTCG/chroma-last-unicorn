@@ -73,10 +73,10 @@ async function runBuildPipeline() {
       const threeMatch = html.match(threeRegex);
 
       let bestPacked = null, minZipLen = Infinity;
-      for (const abbr of [0]) {
+      for (const abbr of [0, 1]) {
         const packer = new Packer(
           [{ data: codeToPack, type: 'js', action: 'eval' }],
-          { numAbbreviations: 0, allowFreeVars: false }
+          { numAbbreviations: abbr, allowFreeVars: false }
         );
         await packer.optimize(2);
         const { firstLine, secondLine } = packer.makeDecoder();

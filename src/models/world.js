@@ -17,7 +17,7 @@ export function createWorld(scene) {
   const createRockMaterial = (tint = 0x8e9aa8) => SMat({
     uniforms: { ...groundUniforms, uTint: { value: Col(tint) } },
     vertexShader: stdVS,
-    fragmentShader: `precision highp float;uniform float uAwakened;uniform vec3 uTint;varying vec3 vWP,vN,vV;void main(){vec3 N=normalize(vN),V=normalize(vV),p=vWP*.45;float n=sin(p.x*2.5+sin(p.y*2.2+p.z*2.8))*.2+sin(p.y*6.+sin(p.x*4.5-p.z*5.))*.08+sin(vWP.x*16.+sin(vWP.y*14.+vWP.z*15.))*.04+.85,d=max(dot(N,vec3(.35,.8,.45)),0.)*.65+.35,top=clamp(N.y*.5+.5,0.,1.),rim=pow(1.-max(dot(N,V),0.),3.)*.35,occ=clamp(n*1.2-.2,.25,1.);vec3 base=mix(vec3(.12,.13,.16),vec3(.42,.44,.47),n*d*mix(.75,1.2,top)),col=mix(base,base*uTint*1.45,.52)*mix(vec3(.35),vec3(1),mix(.3,1.,uAwakened))*occ+rim*uTint*occ;gl_FragColor=vec4(col,1.-smoothstep(70.,165.,length(vV)));}`,
+    fragmentShader: `precision highp float;uniform float uAwakened;uniform vec3 uTint;varying vec3 vWP,vN,vV;void main(){vec3 N=normalize(vN),V=normalize(vV),p=vWP*.4,q=p+sin(p.yzx*3.3)*.35;float n=sin(q.x*2.6+sin(q.y*3.2+q.z*2.4))*.25+sin(q.y*6.5-q.z*5.)*.1+sin(dot(vWP,vec3(22)))*.04+.85,crk=smoothstep(.08,.5,abs(sin(dot(q,vec3(3.6,2.4,3))))),pat=n*crk;vec3 bN=normalize(N+sin(q.yzx*7.)*.12);float d=max(dot(bN,vec3(.4,.8,.5)),0.)*.65+.35,rim=pow(1.-max(dot(bN,V),0.),3.)*.35,occ=clamp(pat*1.2-.2,.25,1.);vec3 gR=mix(vec3(.08),vec3(.35),pat*d)*occ,cR=mix(gR,gR*uTint*1.8,.55)+rim*uTint*occ;gl_FragColor=vec4(mix(gR,cR,uAwakened),1.-smoothstep(70.,165.,length(vV)));}`,
     side: 2, transparent: true, depthWrite: true
   });
 
@@ -47,7 +47,7 @@ export function createWorld(scene) {
 
   const mGeo = CGeo(2.5, 2.5, 32, 4);
   for (let i = 0; i < 24; i++) {
-    const a = (i / 24) * 6.28, d = 82 + Math.random() * 32, h = 22 + Math.random() * 26, m = Msh(mGeo, stoneMat);
+    const a = i * 0.262, d = 82 + Math.random() * 32, h = 22 + Math.random() * 26, m = Msh(mGeo, stoneMat);
     m.scale.set(1 + Math.random(), h / 32, 1 + Math.random());
     m.position.set(Math.cos(a) * d, h / 2, -12 + Math.sin(a) * d);
     worldGroup.add(m);
