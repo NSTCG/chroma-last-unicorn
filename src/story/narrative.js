@@ -57,7 +57,7 @@ export function createNarrative(game) {
             mgr.act = 4;
             game.unicornState = 'ascend';
             game.vrHud?.showEndingNote?.(
-              "Our horse can fly! 🦄\nI didn't save you from that cliff for you to live in grey.\nStop drowning in deadlines. Chase fireflies.\nWhen it rains, find me in the rainbow.\nLive with color again, my love... I'm always in your mind palace. 🌸🌈"
+              "Our horse can fly! 🦄\nI didn't save you from that cliff to live in grey.\nChase fireflies. Find me in the rainbow.\nLive with color again, my love... 🌸🌈"
             );
           }, 2800);
         }, 800);

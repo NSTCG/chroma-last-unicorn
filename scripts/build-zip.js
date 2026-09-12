@@ -80,7 +80,9 @@ async function runBuildPipeline() {
         );
         await packer.optimize(1);
         const { firstLine, secondLine } = packer.makeDecoder();
-        const packedJs = `${firstLine}\n${secondLine}`;
+        let packedJs = `${firstLine}\n${secondLine}`;
+        // Ensure ES module strict mode compatibility (transform `with` statements)
+        packedJs = packedJs.replace(/with\(([^.]+)\.split\(([^)]+)\)\)\s*\1\s*=\s*join\(shift\(\)\)/g, '$1=(_r=$1.split($2)).join(_r.shift())');
 
         let testHtml = html;
         if (threeMatch) {

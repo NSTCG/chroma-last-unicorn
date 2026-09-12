@@ -5,20 +5,20 @@ import { getTerrainHeight } from '../models/world.js';
 import { T, Grp, Msh, BMat, SMat, Col, CGeo, V3 } from '../engine/three.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -25, -6, 9.2, 'Rain: You stared at code until eyes burned. Catch 3 sparks.'],
+  ['Red', 0xff2244, -25, -6, 9.2, 'Rain: You worked till eyes burned. Catch 3 sparks.'],
   ['Orange', 0xff7700, 25, -6, 9.2, 'Fireflies: Catch them with your hands, silly! [0/5]'],
-  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Voicemail: Her voice cuts through the cold silence.'],
+  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Voicemail: Her voice cuts the cold silence.'],
   ['Green', 0x11cc44, 18, 12, 9.5, 'Sky: Not down where I fell. Look to stars [20s].'],
-  ['Blue', 0x00aaff, -24, -18, 10.8, 'Breathe: When grief chokes you... be still [20s].'],
-  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Cliff: Car skidded. I pushed you clear. Forgive yourself.'],
-  ['Violet', 0xcc22ee, 0, -28, 12.8, '3rd Date: What if our horse could fly? Mount unicorn.']
+  ['Blue', 0x00aaff, -24, -18, 10.8, 'Breathe: When grief chokes you, be still [20s].'],
+  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Cliff: Car skidded. I pushed you clear. Forgive.'],
+  ['Violet', 0xcc22ee, 0, -28, 12.8, '3rd Date: What if our horse could fly? Mount up.']
 ].map(([name, color, x, z, y, phrase], index) => ({ name, color, pos: [x, y, z], phrase, index }));
 
 function createOrbMaterial(color) {
   return SMat({
     uniforms: { uColor: { value: Col(color) } },
     vertexShader: stdVS,
-    fragmentShader: `precision highp float;uniform vec3 uColor;varying vec3 vN,vV;void main(){float r=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),2.2);gl_FragColor=vec4(mix(uColor*.7,uColor*1.6+vec3(.4,.5,.6),r),clamp(r*.8+.3,0.,.9));}`,
+    fragmentShader: `precision highp float;uniform vec3 uColor;varying vec3 vN,vV;void main(){float r=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),2.);gl_FragColor=vec4(mix(uColor*.7,uColor*1.5+vec3(.4),r),clamp(r*.8+.3,0.,1.));}`,
     wireframe: true, transparent: true, depthWrite: false
   });
 }
