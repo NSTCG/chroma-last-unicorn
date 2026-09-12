@@ -73,12 +73,12 @@ async function runBuildPipeline() {
       const threeMatch = html.match(threeRegex);
 
       let bestPacked = null, minZipLen = Infinity;
-      for (const abbr of [0, 32]) {
+      for (const abbr of [0]) {
         const packer = new Packer(
           [{ data: codeToPack, type: 'js', action: 'eval' }],
-          { numAbbreviations: abbr, allowFreeVars: true }
+          { numAbbreviations: 0, allowFreeVars: false }
         );
-        await packer.optimize(1);
+        await packer.optimize(2);
         const { firstLine, secondLine } = packer.makeDecoder();
         let packedJs = `${firstLine}\n${secondLine}`;
         // Ensure ES module strict mode compatibility (transform `with` statements)
