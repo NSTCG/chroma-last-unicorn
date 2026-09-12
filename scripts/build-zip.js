@@ -68,8 +68,8 @@ async function runBuildPipeline() {
       });
       const codeToPack = minified.code || scriptFound.code;
 
-      // Ensure Three.js CDN script is placed BEFORE the packed game script
-      const threeRegex = /<script\b[^>]*src=[^>]*three[^>]*><\/script>/i;
+      // Match any existing Three.js script tags
+      const threeRegex = /<script\b[^>]*>(?:import\*as T from["']\/2026\/webxr\/three\.js["'][^<]*|[^<]*src=[^>]*three[^>]*)<\/script>/i;
       const threeMatch = html.match(threeRegex);
 
       let bestPacked = null, minZipLen = Infinity;
@@ -85,10 +85,8 @@ async function runBuildPipeline() {
         let testHtml = html;
         if (threeMatch) {
           testHtml = testHtml.replace(threeRegex, '');
-          testHtml = testHtml.replace(scriptFound.fullMatch, () => `${threeMatch[0]}<script>${packedJs}</script>`);
-        } else {
-          testHtml = testHtml.replace(scriptFound.fullMatch, () => `<script>${packedJs}</script>`);
         }
+        testHtml = testHtml.replace(scriptFound.fullMatch, () => `<script type="module">import*as T from"/2026/webxr/three.js";window.THREE=T;${packedJs}</script>`);
         testHtml = testHtml.replace(/\n\s*/g, '').replace(/>\s+</g, '><').trim();
 
         const testZip = new JSZip();
@@ -106,10 +104,8 @@ async function runBuildPipeline() {
 
       if (threeMatch) {
         html = html.replace(threeRegex, '');
-        html = html.replace(scriptFound.fullMatch, () => `${threeMatch[0]}<script>${packedJs}</script>`);
-      } else {
-        html = html.replace(scriptFound.fullMatch, () => `<script>${packedJs}</script>`);
       }
+      html = html.replace(scriptFound.fullMatch, () => `<script type="module">import*as T from"/2026/webxr/three.js";window.THREE=T;${packedJs}</script>`);
       
       // Minify HTML structure
       html = html
