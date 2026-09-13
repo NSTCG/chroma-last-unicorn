@@ -1,7 +1,7 @@
 import { getTerrainHeight } from '../models/world.js';
 import { audio } from '../audio/synth.js';
 
-export function updateRiding(moveDir, unicorn, obj, delta, isVR, rot, timers) {
+export function updateRiding(moveDir, unicorn, obj, delta, isVR, timers) {
   const isMoving = moveDir.lengthSq() > 0.001;
   if (isMoving) {
     moveDir.normalize();
@@ -11,10 +11,6 @@ export function updateRiding(moveDir, unicorn, obj, delta, isVR, rot, timers) {
       audio.playHoofbeat();
       if (timers.haptics) timers.haptics('both', 0.28, 55);
     }
-    const targetYaw = Math.atan2(-moveDir.x, -moveDir.z);
-    let diff = (targetYaw - (isVR ? rot.rotation.y : rot.y) + 3.14) % 6.28 - 3.14;
-    if (isVR) rot.rotation.y += diff * Math.min(1, delta * 1.2);
-    else { rot.y += diff * Math.min(1, delta * 2.0); obj.quaternion.setFromEuler(rot); }
   }
   unicorn.move(moveDir, delta);
   unicorn.update(delta, isMoving ? 'gallop' : 'idle');

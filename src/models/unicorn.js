@@ -104,8 +104,8 @@ export function createUnicorn(scene) {
       if (moveVector.lengthSq() > 0.001) {
         group.position.addScaledVector(moveVector, 11 * delta);
         const targetAngle = Math.atan2(moveVector.x, moveVector.z);
-        let diff = (targetAngle - currentHeading + 3.14) % 6.28 - 3.14;
-        currentHeading += diff * Math.min(1, delta * 2.5);
+        const diff = Math.atan2(Math.sin(targetAngle - currentHeading), Math.cos(targetAngle - currentHeading));
+        currentHeading += diff * Math.min(1, delta * 6);
         group.rotation.y = currentHeading;
       }
       group.position.y = getTerrainHeight(group.position.x, group.position.z) + 1;

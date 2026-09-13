@@ -98,17 +98,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
       const uState = getUnicornState ? getUnicornState() : null;
 
       if (session?.inputSources) {
-        let headCam = camera;
-        try {
-          if (renderer.xr.isPresenting && renderer.xr.getCamera) headCam = renderer.xr.getCamera(camera) || camera;
-        } catch (_) {}
-        headCam.getWorldDirection(forwardVec);
-        forwardVec.y = 0;
-        if (forwardVec.lengthSq() < 0.001) forwardVec.set(0, 0, -1);
-        else forwardVec.normalize();
-        rightVec.set(-forwardVec.z, 0, forwardVec.x).normalize();
-        vrMoveDir.set(0, 0, 0);
-
+        let lax = 0, lay = 0;
         for (const source of session.inputSources) {
           const btnX = !!(source.gamepad?.buttons?.[4]?.pressed || source.gamepad?.buttons?.[5]?.pressed);
           if (btnX && !source._wasBtn && vrHud?.triggerCallAction) vrHud.triggerCallAction();
@@ -118,21 +108,31 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
           const axes = source.gamepad.axes;
           const ax = axes[2] ?? axes[0] ?? 0, ay = axes[3] ?? axes[1] ?? 0;
 
-          if (source.handedness === 'left') {
-            if (Math.abs(ay) > 0.12) vrMoveDir.addScaledVector(forwardVec, -ay);
-            if (Math.abs(ax) > 0.12) vrMoveDir.addScaledVector(rightVec, ax);
-          }
           if (source.handedness === 'right') {
             if (snapTurnCooldown <= 0 && Math.abs(ax) > 0.55) {
               xrGroup.rotation.y += ax > 0 ? -Math.PI / 4 : Math.PI / 4;
               snapTurnCooldown = 0.28;
             }
             if (Math.abs(ay) > 0.3) xrGroup.position.y -= ay * 5 * delta;
+          } else if (source.handedness === 'left') {
+            lax = ax;
+            lay = ay;
           }
         }
 
+        xrGroup.updateMatrixWorld(true);
+        camera.getWorldDirection(forwardVec);
+        forwardVec.y = 0;
+        if (forwardVec.lengthSq() < 0.001) forwardVec.set(0, 0, -1);
+        else forwardVec.normalize();
+        rightVec.set(-forwardVec.z, 0, forwardVec.x).normalize();
+        vrMoveDir.set(0, 0, 0);
+
+        if (Math.abs(lay) > 0.12) vrMoveDir.addScaledVector(forwardVec, -lay);
+        if (Math.abs(lax) > 0.12) vrMoveDir.addScaledVector(rightVec, lax);
+
         if (uState?.isMounted && uState.unicorn) {
-          updateRiding(vrMoveDir, uState.unicorn, xrGroup, delta, true, xrGroup, timers);
+          updateRiding(vrMoveDir, uState.unicorn, xrGroup, delta, true, timers);
         } else {
           updateWalking(vrMoveDir, xrGroup, delta, true, timers);
         }

@@ -9,7 +9,6 @@ import { createNarrative } from './story/narrative.js';
 import { createVRHUD } from './engine/vrHud.js';
 import { setupPCControls } from './engine/controls.js';
 import { setupXR } from './engine/xr.js';
-import { setupDevStudio } from '@devStudio';
 
 function initGame() {
   const engine = createRenderer();
@@ -69,20 +68,13 @@ function initGame() {
 
   vrHud.setHaptics?.(pulseHaptics);
 
-  const overlay = document.getElementById('o'), btnPc = document.getElementById('p'), btnVr = document.getElementById('q'), navVrBtn = document.getElementById('v');
-  const startGame = () => {
+  const overlay = document.getElementById('o'), btnVr = document.getElementById('q');
+  const launchVR = () => {
     if (overlay) overlay.classList.add('hidden');
     narrative.startExperience();
+    gameObj.xr.startVR();
   };
-
-  if (btnPc) btnPc.addEventListener('click', startGame);
-  const launchVR = () => { startGame(); gameObj.xr.startVR(); };
   if (btnVr) btnVr.addEventListener('click', launchVR);
-  if (navVrBtn) navVrBtn.addEventListener('click', launchVR);
-
-  if (navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-vr').then((s) => { if (navVrBtn) navVrBtn.style.display = s ? 'inline-flex' : 'none'; }).catch(() => { });
-  }
 
   const clock = new window.THREE.Clock();
   renderer.setAnimationLoop(() => {
