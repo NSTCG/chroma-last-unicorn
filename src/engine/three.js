@@ -8,6 +8,7 @@ export const Col = (c) => new T.Color(c);
 export const SMat = (opt) => new T.ShaderMaterial(opt);
 export const BMat = (opt) => new T.MeshBasicMaterial(opt);
 export const PGeo = (w, h, sw, sh) => new T.PlaneGeometry(w, h, sw, sh);
+export const BGeo = (w, h, d) => new T.BoxGeometry(w, h, d);
 export const CGeo = (rt, rb, h, s) => new T.CylinderGeometry(rt, rb, h, s);
 export const SGeo = (r, ws, hs) => new T.SphereGeometry(r, ws, hs);
 export const ConeGeo = (r, h, s) => new T.ConeGeometry(r, h, s);

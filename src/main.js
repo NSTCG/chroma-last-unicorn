@@ -4,6 +4,7 @@ import { createParticleSystem } from './shaders/particleShader.js';
 import { createWorld } from './models/world.js';
 import { createGrassField } from './models/grass.js';
 import { createUnicorn } from './models/unicorn.js';
+import { createOfficeRoom } from './models/office.js';
 import { createShardsSystem } from './story/shards.js';
 import { createNarrative } from './story/narrative.js';
 import { createVRHUD } from './engine/vrHud.js';
@@ -15,6 +16,7 @@ function initGame() {
   const scene = engine.scene, camera = engine.camera, renderer = engine.renderer;
 
   const vrHud = createVRHUD(scene, camera);
+  const office = createOfficeRoom(scene);
   const sky = createRainbowSky(scene);
   const particles = createParticleSystem(scene);
   const world = createWorld(scene);
@@ -24,7 +26,7 @@ function initGame() {
   let unicornState = 'idle', isMounted = false;
 
   const gameObj = {
-    renderer, scene, camera, xr: null, vrHud,
+    renderer, scene, camera, xr: null, vrHud, office,
     set unicornState(s) { unicornState = s; },
     get unicornState() { return unicornState; },
     setAwakened(val) {
@@ -55,16 +57,26 @@ function initGame() {
     }
   };
 
-  const getInteractive = () => [...shards.getInteractiveMeshes(), ...unicorn.getInteractiveMeshes(), vrHud.phoneGroup];
+  const getInteractive = () => [
+    ...shards.getInteractiveMeshes(),
+    ...unicorn.getInteractiveMeshes(),
+    vrHud.phoneGroup,
+    office.phoneGroup
+  ];
   const onSelect = (mesh, isKeyX = false) => {
-    if (narrative.act === 0) return narrative.triggerSlide();
+    if (narrative.act === 0) return narrative.onOfficeSelect ? narrative.onOfficeSelect(mesh, isKeyX) : narrative.triggerSlide();
     if (mesh?.userData?.isTaskNode || mesh?.userData?.index != null) return shards.collect(mesh);
     if (mesh?.userData?.isUnicorn || (isMounted && !mesh && !isKeyX)) return toggleMount();
     if (mesh?.userData?.isPhone || isKeyX || vrHud.isCalling) return vrHud.triggerCallAction();
   };
 
   const pcControls = setupPCControls(camera, renderer.domElement, getInteractive, onSelect, getUState, renderer);
-  gameObj.xr = setupXR(renderer, scene, camera, getInteractive, onSelect, (pos, speed) => shards.checkVRPunch(pos, speed), () => { if (narrative.act === 0) narrative.triggerSlide(); }, getUState, vrHud);
+  gameObj.xr = setupXR(
+    renderer, scene, camera, getInteractive, onSelect,
+    (pos, speed) => shards.checkVRPunch(pos, speed),
+    () => { if (narrative.act === 0) narrative.onOfficeSelect ? narrative.onOfficeSelect() : narrative.triggerSlide(); },
+    getUState, vrHud
+  );
 
   vrHud.setHaptics?.(pulseHaptics);
 
@@ -80,6 +92,7 @@ function initGame() {
   const clock = new window.THREE.Clock();
   renderer.setAnimationLoop(() => {
     const delta = Math.min(clock.getDelta(), 0.1);
+    office.update(delta, clock.getElapsedTime());
     sky.update(delta);
     particles.update(delta);
     world.update(delta, camera);
