@@ -25,7 +25,7 @@ const MODES = {
     notes: [0, 2, 4, 5, 7, 9, 11],
     chord: [0, 4, 7, 11, 14], // Cmaj9
     tempo: 310,
-    moodGain: 0.26,
+    moodGain: 0.68,
     charNote: 4
   },
   // 1: Orange - C Dorian: [C, D, Eb, F, G, A, Bb] - natural 6th (A)
@@ -34,7 +34,7 @@ const MODES = {
     notes: [0, 2, 3, 5, 7, 9, 10],
     chord: [0, 3, 7, 9, 14], // Cm6/9
     tempo: 330,
-    moodGain: 0.26,
+    moodGain: 0.68,
     charNote: 9
   },
   // 2: Yellow - C Phrygian: [C, Db, Eb, F, G, Ab, Bb] - minor 2nd (Db)
@@ -43,7 +43,7 @@ const MODES = {
     notes: [0, 1, 3, 5, 7, 8, 10],
     chord: [0, 1, 7, 10, 15], // Csus(b2, b7)
     tempo: 350,
-    moodGain: 0.24,
+    moodGain: 0.65,
     charNote: 1
   },
   // 3: Green - C Lydian: [C, D, E, F#, G, A, B] - augmented 4th (F#)
@@ -52,7 +52,7 @@ const MODES = {
     notes: [0, 2, 4, 6, 7, 9, 11],
     chord: [0, 4, 6, 11, 14], // Cmaj7#11
     tempo: 300,
-    moodGain: 0.26,
+    moodGain: 0.68,
     charNote: 6
   },
   // 4: Blue - C Mixolydian: [C, D, E, F, G, A, Bb] - minor 7th (Bb)
@@ -61,7 +61,7 @@ const MODES = {
     notes: [0, 2, 4, 5, 7, 9, 10],
     chord: [0, 4, 7, 10, 14], // C9
     tempo: 320,
-    moodGain: 0.25,
+    moodGain: 0.66,
     charNote: 10
   },
   // 5: Indigo - C Aeolian (Natural Minor): [C, D, Eb, F, G, Ab, Bb] - minor 6th (Ab)
@@ -70,7 +70,7 @@ const MODES = {
     notes: [0, 2, 3, 5, 7, 8, 10],
     chord: [0, 3, 7, 8, 10], // Cm(b6)
     tempo: 340,
-    moodGain: 0.25,
+    moodGain: 0.66,
     charNote: 8
   },
   // 6: Violet - C Locrian: [C, Db, Eb, F, Gb, Ab, Bb] - diminished 5th (Gb), minor 2nd (Db)
@@ -79,7 +79,7 @@ const MODES = {
     notes: [0, 1, 3, 5, 6, 8, 10],
     chord: [0, 3, 6, 10, 13], // Cm7b5(b9)
     tempo: 360,
-    moodGain: 0.24,
+    moodGain: 0.64,
     charNote: 6
   },
   // Intro / Free Roam: C Pentatonic Major
@@ -88,7 +88,7 @@ const MODES = {
     notes: [0, 2, 4, 7, 9],
     chord: [0, 4, 7, 9, 14], // C6/9
     tempo: 340,
-    moodGain: 0.26,
+    moodGain: 0.68,
     charNote: 7
   },
   // Finale: Radiant Triumphant C Major Shimmer
@@ -97,7 +97,7 @@ const MODES = {
     notes: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16],
     chord: [0, 4, 7, 11, 12, 16],
     tempo: 260,
-    moodGain: 0.28,
+    moodGain: 0.75,
     charNote: 12
   }
 };
@@ -112,12 +112,12 @@ let arpTimer = null, arpStep = 0;
 function setupBgmGraph() {
   if (!ctx || bgmGainNode) return;
   bgmGainNode = ctx.createGain();
-  bgmGainNode.gain.value = 0.26;
+  bgmGainNode.gain.value = 0.68;
   bgmGainNode.connect(masterGain);
 
   bgmFilter = ctx.createBiquadFilter();
   bgmFilter.type = 'lowpass';
-  bgmFilter.frequency.value = 1800;
+  bgmFilter.frequency.value = 2400;
   bgmFilter.Q.value = 0.7;
   bgmFilter.connect(bgmGainNode);
 
@@ -128,7 +128,7 @@ function setupBgmGraph() {
   // Gentle stereo acoustic delay
   try {
     delaySend = ctx.createGain();
-    delaySend.gain.value = 0.32;
+    delaySend.gain.value = 0.40;
 
     const dL = ctx.createDelay(), dR = ctx.createDelay();
     dL.delayTime.value = 0.28;
@@ -136,10 +136,10 @@ function setupBgmGraph() {
 
     const dFlt = ctx.createBiquadFilter();
     dFlt.type = 'lowpass';
-    dFlt.frequency.value = 1400;
+    dFlt.frequency.value = 1600;
 
     const dFb = ctx.createGain();
-    dFb.gain.value = 0.18;
+    dFb.gain.value = 0.24;
 
     // Pan delay returns if StereoPanner is supported
     if (ctx.createStereoPanner) {
@@ -185,7 +185,7 @@ function startPadVoices(mode) {
     bassOsc.type = 'sine';
     bassOsc.frequency.setValueAtTime(65.41, now);
     bassGain.gain.setValueAtTime(0.0001, now);
-    bassGain.gain.linearRampToValueAtTime(0.065, now + 1.6);
+    bassGain.gain.linearRampToValueAtTime(0.24, now + 1.6);
     bassOsc.connect(bassGain);
     bassGain.connect(bgmBus);
     bassOsc.start(now);
@@ -207,8 +207,8 @@ function startPadVoices(mode) {
       osc2.detune.setValueAtTime(3, now);
 
       vGain.gain.setValueAtTime(0.0001, now);
-      // Soft staggered swell
-      const targetGain = 0.038 / (1 + idx * 0.2);
+      // Rich staggered swell
+      const targetGain = 0.16 / (1 + idx * 0.15);
       vGain.gain.linearRampToValueAtTime(targetGain, now + 1.4 + idx * 0.25);
 
       osc1.connect(vGain);
@@ -224,7 +224,7 @@ function startPadVoices(mode) {
   activePadVoices = voices;
 }
 
-function playModalPluck(freq, velocity = 0.07) {
+function playModalPluck(freq, velocity = 0.22) {
   if (!ctx || !bgmBus || ctx.state !== 'running') return;
   const now = ctx.currentTime;
   const osc1 = ctx.createOscillator(), osc2 = ctx.createOscillator(), g = ctx.createGain();
@@ -271,7 +271,7 @@ function tickModalArp() {
 
     const oct = (Math.random() < 0.35) ? 5 : 4;
     const freq = noteFreq(pickSemi, oct);
-    const vel = 0.038 + Math.random() * 0.035;
+    const vel = 0.18 + Math.random() * 0.09;
     playModalPluck(freq, vel);
   }
 }
@@ -282,7 +282,7 @@ export const audio = {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     masterGain = ctx.createGain();
-    masterGain.gain.value = 0.30;
+    masterGain.gain.value = 0.45;
     masterGain.connect(ctx.destination);
 
     setupBgmGraph();
@@ -342,7 +342,7 @@ export const audio = {
     if (bgmGainNode && ctx) {
       const now = ctx.currentTime;
       bgmGainNode.gain.cancelScheduledValues(now);
-      bgmGainNode.gain.linearRampToValueAtTime(mode.moodGain || 0.26, now + 1.2);
+      bgmGainNode.gain.linearRampToValueAtTime(mode.moodGain || 0.68, now + 1.2);
     }
 
     if (arpTimer) clearInterval(arpTimer);
@@ -361,12 +361,12 @@ export const audio = {
     // Smoothly duck procedural BGM while Maya speaks
     if (ctx && bgmGainNode) {
       bgmGainNode.gain.cancelScheduledValues(ctx.currentTime);
-      bgmGainNode.gain.linearRampToValueAtTime(0.065, ctx.currentTime + 0.25);
+      bgmGainNode.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.25);
     }
 
     const restore = () => {
       if (ctx && bgmGainNode) {
-        const targetGain = currentMode?.moodGain || 0.26;
+        const targetGain = currentMode?.moodGain || 0.68;
         bgmGainNode.gain.cancelScheduledValues(ctx.currentTime);
         bgmGainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 0.4);
       }
@@ -394,7 +394,7 @@ export const audio = {
       try { currentVoice.pause(); currentVoice.currentTime = 0; } catch (_) {}
       currentVoice = null;
       if (ctx && bgmGainNode) {
-        const targetGain = currentMode?.moodGain || 0.26;
+        const targetGain = currentMode?.moodGain || 0.68;
         bgmGainNode.gain.cancelScheduledValues(ctx.currentTime);
         bgmGainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 0.3);
       }
