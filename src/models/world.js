@@ -8,6 +8,13 @@ export function getTerrainHeight(x, z) {
   return r < 90 ? 0 : Math.pow((r - 90) / 120, 1.7) * 48 + Math.sin(Math.atan2(lz, lx) * 6) * 10;
 }
 
+export function isRockSurface(x, y, z) {
+  const dist = Math.hypot(x, z + 12);
+  if (dist < 9.5) return true;
+  if (dist > 85) return true;
+  return false;
+}
+
 export function createWorld(scene) {
   const worldGroup = Grp();
   scene.add(worldGroup);

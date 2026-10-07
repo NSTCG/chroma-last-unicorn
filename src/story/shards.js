@@ -92,6 +92,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
     clearTask();
     vrHud?.resetCall?.();
 
+    audio.playBGM(idx);
     const voiceKeys = ['shard0_red', 'shard1_orange', null, 'shard3_green', 'shard4_blue', 'shard5_indigo', 'shard6_violet'];
     if (voiceKeys[idx]) {
       audio.playVoice(voiceKeys[idx]);

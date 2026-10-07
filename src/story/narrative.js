@@ -32,6 +32,7 @@ export function createNarrative(game) {
       mgr.act = 0;
       game.setAwakened(1);
       moveCam(getSlidePoint(1), getSlidePoint(0.96));
+      audio.playBGM('intro');
       audio.playVoice('intro');
       game.vrHud?.show('2:43 AM • TERMINAL', 'Desk cold. Numb with grief since the cliff... Maya calls from the dream valley.', 'Trigger / Click to Enter');
     },
@@ -50,6 +51,7 @@ export function createNarrative(game) {
         setTimeout(() => {
           mgr.act = 3;
           game.setAwakened(1);
+          audio.playBGM('finale');
           audio.playAscent();
           audio.playFeelGoodEnding();
           game.vrHud?.show('✨ AWAKENED', 'Her love restores our world!');
@@ -77,6 +79,7 @@ export function createNarrative(game) {
         isSliding = false;
         mgr.act = 1;
         game.setAwakened(0);
+        audio.playBGM(0);
         moveCam(V3(0, 1.7, 5), V3(0, 1.7, -12));
         game.vrHud?.show('💔 COLORLESS GRIEF', 'Awaken 7 memories of Maya to heal.');
       }
