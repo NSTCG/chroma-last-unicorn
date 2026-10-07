@@ -10,11 +10,11 @@ export function createVRHUD(scene, camera) {
   tex.generateMipmaps = false;
 
   const phoneGroup = Grp();
-  const bodyMesh = Msh(PGeo(.125, .245), BMat({ color: 0x151520 }));
+  const bodyMesh = Msh(PGeo(.125, .245), BMat({ color: 0x151520, depthTest: false, depthWrite: false }));
   const screenMesh = Msh(PGeo(.118, .236), BMat({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
   screenMesh.position.z = .005;
-  screenMesh.renderOrder = 999;
-  bodyMesh.renderOrder = 998;
+  screenMesh.renderOrder = 10001;
+  bodyMesh.renderOrder = 10000;
   bodyMesh.userData.isPhone = screenMesh.userData.isPhone = true;
   phoneGroup.add(bodyMesh, screenMesh);
 
@@ -78,6 +78,57 @@ export function createVRHUD(scene, camera) {
 
     ctx.fillStyle = '#121222f5';
     rr(16, 92, 288, 414, 20);
+
+    if (callState === 'credits') {
+      ctx.fillStyle = '#06060f';
+      rr(6, 6, 308, 528, 26);
+      ctx.strokeStyle = '#ffd700aa'; ctx.lineWidth = 2.5; ctx.stroke();
+
+      ctx.fillStyle = '#ffd700'; ctx.font = f0; ctx.textAlign = 'center';
+      ctx.fillText('✨ JOURNEY COMPLETED ✨', 160, 40);
+
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText('CHROMA', 160, 74);
+      ctx.fillStyle = '#a0d8ef'; ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+      ctx.fillText('THE LAST UNICORN', 160, 94);
+
+      for (let i = 0; i < 7; i++) {
+        ctx.beginPath(); ctx.arc(88 + i * 24, 118, 6, 0, 6.28);
+        ctx.fillStyle = shardColors[i]; ctx.fill();
+      }
+
+      ctx.fillStyle = '#141428ee';
+      rr(22, 140, 276, 114, 14);
+      ctx.strokeStyle = '#ff79c666'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.font = 'italic 12px system-ui, -apple-system, sans-serif';
+      wrapText('“Chase fireflies. Find me in the rainbow.\nLive with color again, my love... 🌸🌈”', 160, 174, 256, 20);
+
+      ctx.strokeStyle = '#ffffff25'; ctx.beginPath(); ctx.moveTo(40, 270); ctx.lineTo(280, 270); ctx.stroke();
+
+      ctx.fillStyle = '#ffffff88'; ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
+      ctx.fillText('CREATED & DEVELOPED BY', 160, 296);
+
+      ctx.fillStyle = '#50fa7b'; ctx.font = 'bold 25px system-ui, -apple-system, sans-serif';
+      ctx.fillText('NSTCG STUDIOS', 160, 330);
+
+      ctx.fillStyle = '#ffffffbb'; ctx.font = '10px system-ui, -apple-system, sans-serif';
+      ctx.fillText('A WebXR & Atmospheric Dream Experience', 160, 354);
+      ctx.fillStyle = '#ffffff55'; ctx.font = '9px system-ui, -apple-system, sans-serif';
+      ctx.fillText('© 2026 NSTCG STUDIOS • ALL RIGHTS RESERVED', 160, 374);
+
+      ctx.fillStyle = '#ffd70025';
+      rr(32, 410, 256, 54, 27);
+      ctx.strokeStyle = '#ffd700ee'; ctx.lineWidth = 2.2; ctx.stroke();
+      ctx.fillStyle = '#ffd700'; ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+      ctx.fillText('🌸 PLAY AGAIN', 160, 442);
+
+      ctx.fillStyle = '#ffffffaa'; ctx.font = '10px system-ui, -apple-system, sans-serif';
+      ctx.fillText('[Trigger / Click to Play Again]', 160, 488);
+      ctx.textAlign = 'left';
+
+      tex.needsUpdate = true;
+      return;
+    }
 
     if (callState !== 'idle') {
       const end = callState === 'ending', live = callState === 'talking' || end, ring = callState === 'ringing', sc = end ? '#fd0' : (live ? '#2c7' : '#f7c');
@@ -161,6 +212,11 @@ export function createVRHUD(scene, camera) {
       redraw();
       if (pulseHaptics) pulseHaptics('both', 0.9, 300);
     },
+    showCredits: () => {
+      callState = 'credits';
+      redraw();
+      if (pulseHaptics) pulseHaptics('both', 0.9, 350);
+    },
     startCallTask: (shard, onComplete) => {
       callState = 'offer';
       onCallComplete = onComplete;
@@ -171,6 +227,11 @@ export function createVRHUD(scene, camera) {
       if (now - lastAction < 320) return;
       lastAction = now;
       if (pulseHaptics) pulseHaptics('right', 0.6, 90);
+
+      if (callState === 'credits') {
+        window.location.reload();
+        return;
+      }
 
       if (callState === 'offer') {
         callState = 'accepted';
@@ -209,6 +270,14 @@ export function createVRHUD(scene, camera) {
       }
     },
     update: (delta, cam, isVR, leftCtrl, rightCtrl) => {
+      if (callState === 'credits') {
+        if (cam && phoneGroup.parent !== cam) cam.add(phoneGroup);
+        phoneGroup.position.set(0, 0, -0.42);
+        phoneGroup.rotation.set(0, 0, 0);
+        phoneGroup.scale.setScalar(1.6);
+        return;
+      }
+
       if (callState === 'ringing') {
         callTimer += delta;
         if (callTimer > 2.4) {
