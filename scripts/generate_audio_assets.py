@@ -305,85 +305,85 @@ def create_chord_progression(chords, bpm, note_type='pad', total_bars=4):
     stereo[:fade_len] = stereo[:fade_len] * np.linspace(0, 1, fade_len)[:, None] + stereo[-fade_len:] * np.linspace(1, 0, fade_len)[:, None]
     return normalize(stereo, 0.65)
 
-# Mood 0: Intro (Terminal / Rain & Midnight) - Melancholic Dm9 -> G13 -> Cmaj7 -> Am7
+# Mood 0: Intro (Terminal / Rain & Midnight) - Gentle C Pentatonic Rhodes (C6/9 -> G/B -> Am7 -> Fadd9)
 def make_intro_bgm():
     chords = [
-        [146.8, 220.0, 261.6, 329.6],
-        [196.0, 246.9, 329.6],
-        [130.8, 196.0, 246.9, 329.6],
-        [110.0, 164.8, 220.0]
+        [130.8, 196.0, 261.6, 293.7, 329.6],  # C6/9
+        [123.5, 196.0, 246.9, 293.7],         # G/B
+        [110.0, 164.8, 220.0, 261.6],         # Am7
+        [174.6, 220.0, 261.6, 293.7]          # Fadd9
     ]
     return create_chord_progression(chords, bpm=60, note_type='rhodes', total_bars=4)
 
-# Mood 1: Red Shard (The Thunderstorm & Candles) - Warm C -> G/B -> Am -> Fmaj7
+# Level 0: Red Shard - C Major (Ionian) [Cmaj7 -> Dm7 -> Em7 -> Fmaj7]
 def make_red_bgm():
     chords = [
-        [130.8, 196.0, 261.6],
-        [123.5, 196.0, 246.9],
-        [110.0, 164.8, 220.0],
-        [174.6, 220.0, 261.6]
+        [130.8, 196.0, 246.9, 329.6],  # Cmaj7
+        [146.8, 220.0, 261.6, 349.2],  # Dm7
+        [164.8, 196.0, 246.9, 329.6],  # Em7
+        [174.6, 220.0, 261.6, 329.6]   # Fmaj7
     ]
     return create_chord_progression(chords, bpm=66, note_type='acoustic', total_bars=4)
 
-# Mood 2: Orange Shard (Firefly Meadow) - Sunlit Kalimba D -> G -> A -> Bm
+# Level 1: Orange Shard - C Dorian (Natural 6th A) [Cm7 -> F/C -> Cm6 -> Bb/C]
 def make_orange_bgm():
     chords = [
-        [293.7, 369.9, 440.0],
-        [196.0, 293.7, 392.0],
-        [220.0, 277.2, 440.0],
-        [246.9, 293.7, 369.9]
+        [130.8, 155.6, 196.0, 233.1],  # Cm7
+        [130.8, 174.6, 220.0, 261.6],  # F/C (natural 6th A)
+        [130.8, 155.6, 196.0, 220.0],  # Cm6 (natural 6th A)
+        [130.8, 174.6, 233.1, 293.7]   # Bb/C
     ]
     return create_chord_progression(chords, bpm=72, note_type='kalimba', total_bars=4)
 
-# Mood 3: Yellow Shard (Voicemail Road Trip) - Bittersweet indie F -> C -> Dm -> Bb
+# Level 2: Yellow Shard - C Phrygian (Minor 2nd Db) [Cm -> Db/C -> Bbm/C -> Csusb2]
 def make_yellow_bgm():
     chords = [
-        [174.6, 220.0, 261.6],
-        [130.8, 196.0, 261.6],
-        [146.8, 220.0, 261.6],
-        [116.5, 174.6, 233.1]
+        [130.8, 155.6, 196.0, 261.6],  # Cm
+        [130.8, 138.6, 174.6, 207.7],  # Db/C (minor 2nd Db)
+        [130.8, 155.6, 207.7, 233.1],  # Bbm/C
+        [130.8, 138.6, 196.0, 233.1]   # Csus(b2)
     ]
-    return create_chord_progression(chords, bpm=64, note_type='acoustic', total_bars=4)
+    return create_chord_progression(chords, bpm=62, note_type='acoustic', total_bars=4)
 
-# Mood 4: Green Shard (Celestial Sky & Stargazing) - Cosmic Em7 -> Cmaj7 -> G -> D
+# Level 3: Green Shard - C Lydian (Augmented 4th F#) [Cmaj7 -> D/C -> Cmaj7#11 -> Gmaj7/C]
 def make_green_bgm():
     chords = [
-        [164.8, 196.0, 246.9, 329.6],
-        [130.8, 196.0, 246.9, 329.6],
-        [196.0, 246.9, 293.7, 392.0],
-        [146.8, 220.0, 293.7]
+        [130.8, 196.0, 246.9, 329.6],  # Cmaj7
+        [130.8, 146.8, 185.0, 220.0],  # D/C (#4 F#)
+        [130.8, 185.0, 246.9, 329.6],  # Cmaj7#11
+        [130.8, 196.0, 246.9, 293.7]   # Gmaj7/C
     ]
-    return create_chord_progression(chords, bpm=56, note_type='pad', total_bars=4)
+    return create_chord_progression(chords, bpm=58, note_type='pad', total_bars=4)
 
-# Mood 5: Blue Shard (Breathe & Hospital Peace) - Deep meditative Ab -> Eb -> Fm -> Db
+# Level 4: Blue Shard - C Mixolydian (Minor 7th Bb) [C7 -> Bb/C -> F/C -> C]
 def make_blue_bgm():
     chords = [
-        [103.8, 155.6, 207.7],
-        [155.6, 233.1, 311.1],
-        [87.3, 130.8, 174.6],
-        [138.6, 207.7, 277.2]
+        [130.8, 164.8, 196.0, 233.1],  # C7 (b7 Bb)
+        [130.8, 174.6, 233.1, 293.7],  # Bb/C
+        [130.8, 174.6, 220.0, 261.6],  # F/C
+        [130.8, 164.8, 196.0, 261.6]   # C
     ]
-    return create_chord_progression(chords, bpm=50, note_type='pad', total_bars=4)
+    return create_chord_progression(chords, bpm=54, note_type='pad', total_bars=4)
 
-# Mood 6: Indigo Shard (The Cliff Road & Catharsis) - Warm, Emotional Acoustic Piano (Bm -> G -> D -> A)
+# Level 5: Indigo Shard - C Minor / Aeolian (Minor 6th Ab) [Cm7 -> Abmaj7 -> Eb/G -> Bb]
 def make_indigo_bgm():
     chords = [
-        [123.5, 146.8, 185.0, 220.0],  # Bm7
-        [98.0, 146.8, 196.0, 246.9],   # Gmaj7
-        [146.8, 185.0, 220.0, 293.7],  # D
-        [110.0, 164.8, 220.0, 277.2]   # A
+        [130.8, 155.6, 196.0, 233.1],  # Cm7
+        [103.8, 155.6, 207.7, 261.6],  # Abmaj7 (b6 Ab)
+        [98.0, 155.6, 196.0, 311.1],   # Eb/G
+        [116.5, 174.6, 233.1, 293.7]   # Bb
     ]
     return create_chord_progression(chords, bpm=60, note_type='piano', total_bars=4)
 
-# Mood 7: Violet Shard (3rd Date Carousel & Unicorn) - Gentle Warm Music Box Waltz
+# Level 6: Violet Shard - C Locrian (Diminished 5th Gb & Minor 2nd Db) [Cm7b5 -> Dbmaj7 -> Ebm7 -> Cm7b5]
 def make_violet_bgm():
     chords = [
-        [233.1, 293.7, 349.2],
-        [155.6, 233.1, 311.1],
-        [174.6, 220.0, 261.6],
-        [196.0, 233.1, 293.7]
+        [130.8, 155.6, 185.0, 233.1],  # Cm7b5 (b5 Gb)
+        [138.6, 174.6, 207.7, 261.6],  # Dbmaj7 (b2 Db)
+        [155.6, 185.0, 220.0, 277.2],  # Ebm7
+        [130.8, 155.6, 185.0, 233.1]   # Cm7b5
     ]
-    return create_chord_progression(chords, bpm=68, note_type='celesta', total_bars=4)
+    return create_chord_progression(chords, bpm=66, note_type='celesta', total_bars=4)
 
 # Finale: Awakened Rainbow Valley - Soothing, Emotional Acoustic Grand Piano & Warm Pad
 def make_finale_bgm():
@@ -458,9 +458,16 @@ def make_finale_bgm():
     return normalize(stereo, 0.68)
 
 def main():
-    print("Generating Normal & Soothing Mood Soundtracks...")
+    print("Generating 7 Modes of C + Intro & Finale MP3 Soundtracks...")
     music_items = {
+        'bgm_intro': make_intro_bgm,
+        'bgm_level0_red': make_red_bgm,
+        'bgm_level1_orange': make_orange_bgm,
+        'bgm_level2_yellow': make_yellow_bgm,
+        'bgm_level3_green': make_green_bgm,
+        'bgm_level4_blue': make_blue_bgm,
         'bgm_level5_indigo': make_indigo_bgm,
+        'bgm_level6_violet': make_violet_bgm,
         'bgm_finale': make_finale_bgm
     }
 
@@ -469,6 +476,7 @@ def main():
     os.makedirs(alt_music_dir, exist_ok=True)
 
     for name, func in music_items.items():
+        print(f"Rendering {name}...")
         audio = func()
         wav_path = os.path.join(MUSIC_DIR, f"{name}.wav")
         mp3_path = os.path.join(MUSIC_DIR, f"{name}.mp3")
@@ -476,7 +484,8 @@ def main():
         to_mp3(wav_path, mp3_path, bitrate="128k")
         alt_mp3_path = os.path.join(alt_music_dir, f"{name}.mp3")
         shutil.copyfile(mp3_path, alt_mp3_path)
-        print(f"  [BGM OK] {name}.mp3 (both dirs)")
+        print(f"  [BGM OK] {name}.mp3 (copied to public/ and audio/)")
 
 if __name__ == '__main__':
     main()
+
