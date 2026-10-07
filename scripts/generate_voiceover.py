@@ -14,14 +14,14 @@ for d in [VOICES_DIR, ALT_VOICES_DIR, DIST_VOICES_DIR]:
 
 FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 
-# Japanese accent female voice: ja-JP-NanamiNeural
-VOICE_NAME = "ja-JP-NanamiNeural"
+# Cute, loving young wife voice: en-US-AvaNeural (Expressive, Caring, Pleasant, Friendly young woman)
+VOICE_NAME = "en-US-AvaNeural"
 
 # Pure, clean dialogue scripts (no XML tags)
 VOICEOVER_SCRIPTS = {
     'intro': (
-        "Hey... are you still staring at that glowing monitor, sweetheart? It is past midnight. "
-        "Pack your warm jacket, okay? Tomorrow morning, we are taking the old winding highway up to the cliffs. "
+        "Hey... are you still staring at that glowing monitor, sweetheart? It's past midnight. "
+        "Pack your warm jacket, okay? Tomorrow morning, we're taking the old winding highway up to the cliffs. "
         "Just you, me, and the sunrise."
     ),
     'shard0_red': (
@@ -32,7 +32,7 @@ VOICEOVER_SCRIPTS = {
     'shard1_orange': (
         "Look at the tall grass! Remember our camping trip by the lake, chasing fireflies in your bare feet? "
         "You whispered that you wished we could stay in that golden twilight forever... "
-        "I am still right here with you, my love."
+        "I'm still right here in the grass with you, my love."
     ),
     'shard2_yellow_1': (
         "Still stuck at work, babe? Hey, remember our deal: no tech talk once we hit the interstate! "
@@ -41,16 +41,16 @@ VOICEOVER_SCRIPTS = {
     'shard2_yellow_2': (
         "I packed my old 35 millimeter camera for the cliff overlook. "
         "The weather radio says the sunset is going to paint the whole canyon in gold tonight. "
-        "I cannot wait to see it with you."
+        "I can't wait to see it with you."
     ),
     'shard2_yellow_3': (
-        "I love you so much. Do not drive too fast tonight, sweetheart. "
-        "I will see you at home soon... so much love."
+        "I love you so much. Don't drive too fast tonight, sweetheart. "
+        "I'll see you at home soon... so much love."
     ),
     'shard3_green': (
         "Stop looking down at where the tires skidded, love. Look up at the stars with me. "
-        "Remember lying on the hood of our beat-up car, picking out constellations that did not exist? "
-        "That is where I am now. Keep your eyes on the stars with me."
+        "Remember lying on the hood of our beat-up car, picking out constellations that didn't exist? "
+        "That's where I am now. Keep your eyes on the stars with me."
     ),
     'shard4_blue': (
         "Breathe with me, sweetheart. Deep breath in... and slow breath out. "
@@ -65,12 +65,12 @@ VOICEOVER_SCRIPTS = {
     ),
     'shard6_violet': (
         "Do you remember our third date at the seaside carnival? "
-        "You pointed at the carved wooden carousel and joked that one day we would fly over the mountains on a unicorn. "
-        "Well... look at him! He is waiting for you. Mount up, my brave adventurer."
+        "You pointed at the carved wooden carousel and joked that one day we'd fly over the mountains on a unicorn. "
+        "Well... look at him! He's waiting for you. Mount up, my brave adventurer!"
     ),
     'finale': (
         "You did it, my love. Look at the valley... all our colors have returned. "
-        "I did not save your life on that cliff road so you would live in greyscale and grief. "
+        "I didn't save your life on that cliff road so you'd live in greyscale and grief. "
         "Chase fireflies again. Laugh until your chest hurts. Love this beautiful world. "
         "Whenever a rainbow breaks through the clouds, know that I am smiling. "
         "I love you forever. Now fly!"
@@ -78,25 +78,25 @@ VOICEOVER_SCRIPTS = {
 }
 
 async def generate_audio():
-    print(f"Generating Maya voiceovers with Japanese accent ({VOICE_NAME})...")
+    print(f"Generating Maya voiceovers with cute young wife voice ({VOICE_NAME})...")
     for key, text in VOICEOVER_SCRIPTS.items():
         raw_mp3 = os.path.join(VOICES_DIR, f"{key}_raw.mp3")
         final_mp3 = os.path.join(VOICES_DIR, f"{key}.mp3")
         
-        # Pure clean text with gentle tender pacing
-        comm = edge_tts.Communicate(text, voice=VOICE_NAME, rate="-3%", pitch="+0Hz")
+        # Pure clean text with gentle, tender, loving wife pacing and subtle sweet pitch
+        comm = edge_tts.Communicate(text, voice=VOICE_NAME, rate="-4%", pitch="+1Hz")
         await comm.save(raw_mp3)
         
         # Warm, intimate studio vocal mastering:
-        # - Highpass 75Hz (cleans sub-rumble)
-        # - Gentle chest warmth boost at 200Hz (+1.8dB)
-        # - Smooth presence polish at 3400Hz (+1.2dB)
-        # - Transparent optical vocal leveling compression
+        # - Highpass 80Hz (cleans sub-rumble)
+        # - Natural chest body warmth boost at 190Hz (+1.8dB)
+        # - Sweet presence clarity polish at 3300Hz (+1.0dB)
+        # - Transparent optical leveling compression
         filter_str = (
-            "highpass=f=75,"
-            "bass=g=1.8:f=200,"
-            "equalizer=f=3400:t=q:w=1.2:g=1.2,"
-            "acompressor=threshold=-16dB:ratio=2.2:attack=10:release=100,"
+            "highpass=f=80,"
+            "bass=g=1.8:f=190,"
+            "equalizer=f=3300:t=q:w=1.2:g=1.0,"
+            "acompressor=threshold=-16dB:ratio=2.2:attack=10:release=110,"
             "volume=1.35"
         )
         cmd = [
