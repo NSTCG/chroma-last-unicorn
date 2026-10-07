@@ -6,7 +6,7 @@ export function setupXR(renderer, scene, camera, getInteractiveObjects, onSelect
   renderer.xr.enabled = true;
   try { renderer.xr.setReferenceSpaceType('local-floor'); } catch (_) {}
   renderer.xr.addEventListener('sessionstart', () => {
-    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(1); } catch (_) {}
+    try { if (renderer.xr.setFoveation) renderer.xr.setFoveation(0); } catch (_) {}
     try { renderer.xr.getSession()?.updateTargetFrameRate?.(72); } catch (_) {}
   });
 

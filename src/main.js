@@ -40,7 +40,7 @@ function initGame() {
 
   const pulseHaptics = (h, i, d) => gameObj.xr?.pulseHaptics?.(h, i, d);
   const getUState = () => ({ isMounted, unicorn });
-  const shards = createShardsSystem(scene, () => narrative.onShardCollected(), vrHud, pulseHaptics, getUState, camera);
+  const shards = createShardsSystem(scene, () => narrative.onShardCollected(), vrHud, pulseHaptics, getUState, camera, grass);
 
   const toggleMount = () => {
     isMounted = !isMounted;

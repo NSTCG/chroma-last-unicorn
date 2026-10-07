@@ -3,15 +3,14 @@ import { T, Grp, Msh, BMat, PGeo } from './three.js';
 
 export function createVRHUD(scene, camera) {
   const canvas = document.createElement('canvas');
-  canvas.width = 320; canvas.height = 540;
+  canvas.width = 640; canvas.height = 1080;
   const ctx = canvas.getContext('2d');
   const tex = new T.CanvasTexture(canvas);
 
   const phoneGroup = Grp();
   const bodyMesh = Msh(PGeo(.125, .245), BMat({ color: 0x151520 }));
-  const screenMesh = Msh(PGeo(.118, .236), BMat({ map: tex, transparent: true, depthTest: false, depthWrite: false, side: 2 }));
+  const screenMesh = Msh(PGeo(.118, .236), BMat({ map: tex, transparent: true, depthTest: true, depthWrite: false, side: 2 }));
   screenMesh.position.z = .0045;
-  screenMesh.renderOrder = 999;
   phoneGroup.add(bodyMesh, screenMesh);
 
   if (camera) camera.add(phoneGroup);
@@ -39,7 +38,7 @@ export function createVRHUD(scene, camera) {
       let line = '';
       for (const word of para.split(' ')) {
         const test = line + word + ' ';
-        if (ctx.measureText(test).width > maxW && line.length > 0) {
+        if (ctx.measureText(test).width > maxW && line.length) {
           ctx.fillText(line, x, y);
           line = word + ' ';
           y += lineH;
@@ -51,13 +50,16 @@ export function createVRHUD(scene, camera) {
     return y;
   };
 
+  const f1 = 'bold 15px sans-serif', f2 = 'bold 24px sans-serif';
+
   function redraw() {
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
     ctx.clearRect(0, 0, 320, 540);
     ctx.fillStyle = '#0a0a14';
     rr(8, 8, 304, 524, 28);
     ctx.strokeStyle = '#64c8ff73'; ctx.lineWidth = 2.5; ctx.stroke();
 
-    ctx.fillStyle = '#fffa'; ctx.font = '13px sans-serif';
+    ctx.fillStyle = '#fffa'; ctx.font = f1;
     ctx.fillText('🌈 CHROMA', 24, 38);
     ctx.textAlign = 'right'; ctx.fillText('100% ⚡', 296, 38); ctx.textAlign = 'left';
 
@@ -72,19 +74,19 @@ export function createVRHUD(scene, camera) {
 
     if (callState !== 'idle') {
       const end = callState === 'ending', live = callState === 'talking' || end, ring = callState === 'ringing', sc = end ? '#fd0' : (live ? '#2c7' : '#f7c');
-      ctx.fillStyle = sc; ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = sc; ctx.font = f1;
       ctx.fillText(end ? '💌 MAYA NOTE' : (live ? '🟢 CALL ACTIVE' : (ring ? '📞 DIALING...' : '📞 INCOMING')), 32, 122);
 
       ctx.beginPath(); ctx.arc(160, 178, 28, 0, 6.28);
       ctx.fillStyle = '#795290'; ctx.fill();
       ctx.strokeStyle = sc; ctx.lineWidth = 3; ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.font = '22px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff'; ctx.font = f2; ctx.textAlign = 'center';
       ctx.fillText('🌸', 160, 186);
 
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = '#fff'; ctx.font = f2;
       ctx.fillText('Maya', 160, 228);
 
-      ctx.fillStyle = end ? '#fd0' : (live ? '#2c7' : '#a0d8ef'); ctx.font = '12px sans-serif';
+      ctx.fillStyle = end ? '#fd0' : (live ? '#2c7' : '#a0d8ef'); ctx.font = f1;
       ctx.fillText(end ? 'Mind Palace 🌈' : (live ? 'Connected 📶' : (ring ? 'Ringing... 📞' : 'Signal Active')), 160, 246);
 
       ctx.textAlign = 'left';
@@ -92,35 +94,34 @@ export function createVRHUD(scene, camera) {
       rr(28, end ? 254 : 262, 264, end ? 172 : 154, 14);
       ctx.strokeStyle = '#64c8ff33'; ctx.lineWidth = 1.5; ctx.stroke();
 
-      ctx.fillStyle = '#fff'; ctx.font = end ? '11px sans-serif' : '15px sans-serif';
-      wrapText(sub || title, end ? 36 : 40, end ? 270 : 290, end ? 248 : 240, end ? 16 : 22);
+      ctx.fillStyle = '#fff'; ctx.font = f1;
+      wrapText(sub || title, end ? 36 : 40, end ? 266 : 286, end ? 248 : 240, end ? 18 : 23);
 
       ctx.fillStyle = (talkStep === 2) ? '#f36' : (end ? '#fd0' : '#2c7');
       rr(36, 436, 248, 44, 22);
 
-      ctx.fillStyle = '#0a0a14'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#0a0a14'; ctx.font = f1; ctx.textAlign = 'center';
       ctx.fillText(act || '🌈 RESTORED', 160, 463);
       ctx.textAlign = 'left';
     } else {
-      ctx.fillStyle = '#ff79c6'; ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = '#ff79c6'; ctx.font = f1;
       ctx.fillText('NARRATIVE DISPATCH', 36, 126);
 
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 22px sans-serif';
-      let curY = wrapText(title, 36, 168, 248, 28);
+      ctx.fillStyle = '#fff'; ctx.font = f2;
+      let curY = wrapText(title, 36, 166, 248, 28);
 
       if (sub) {
-        ctx.fillStyle = '#a0d8ef'; ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#a0d8ef'; ctx.font = f1;
         curY = wrapText(sub, 36, curY + 12, 248, 24);
       }
 
       if (act) {
-        ctx.fillStyle = '#ffea79'; ctx.font = 'bold 14px sans-serif';
-        wrapText(act, 36, curY + 18, 248, 22);
+        ctx.fillStyle = '#ffea79'; ctx.font = f1;
+        wrapText(act, 36, curY + 16, 248, 24);
       }
     }
 
     tex.version++;
-    tex.needsUpdate = true;
   }
 
   redraw();
@@ -213,13 +214,13 @@ export function createVRHUD(scene, camera) {
           if (phoneGroup.parent !== holder) holder.add(phoneGroup);
           phoneGroup.position.set(0.02, 0.04, -0.06);
           phoneGroup.rotation.set(-Math.PI / 4, 0, 0);
-          phoneGroup.scale.setScalar(.85);
+          phoneGroup.scale.setScalar(1);
         }
       } else if (cam) {
         if (phoneGroup.parent !== cam) cam.add(phoneGroup);
         phoneGroup.position.set(0.14, -0.12, -0.32);
         phoneGroup.rotation.set(-0.35, -0.22, 0.05);
-        phoneGroup.scale.setScalar(.85);
+        phoneGroup.scale.setScalar(1);
       }
     }
   };

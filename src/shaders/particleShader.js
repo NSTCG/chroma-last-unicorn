@@ -26,6 +26,7 @@ export function createParticleSystem(scene, count = 1200) {
 
   const points = new T.Points(geo, mat);
   points.position.set(0, 0, -12);
+  points.renderOrder = 2;
   scene.add(points);
 
   return { uniforms, update: (delta) => { uniforms.uTime.value += delta; } };

@@ -6,7 +6,7 @@ import { T, Grp, Msh, BMat, SMat, Col, CGeo, V3 } from '../engine/three.js';
 
 export const SHARDS_DATA = [
   ['Red', 0xff2244, -25, -6, 9.2, 'Rain: You worked till eyes burned. Catch 3 sparks.'],
-  ['Orange', 0xff7700, 25, -6, 9.2, 'Fireflies: Catch them with your hands, silly! [0/5]'],
+  ['Orange', 0xff7700, 25, -6, 9.2, 'Fireflies: Catch orange clumps under grass! [0/5]'],
   ['Yellow', 0xffcc00, -18, 12, 9.5, 'Voicemail: Her voice cuts the cold silence.'],
   ['Green', 0x11cc44, 18, 12, 9.5, 'Sky: Not down where I fell. Look to stars [20s].'],
   ['Blue', 0x00aaff, -24, -18, 10.8, 'Breathe: When grief chokes you, be still [20s].'],
@@ -23,12 +23,12 @@ function createOrbMaterial(color) {
   });
 }
 
-export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics, getUnicornState, camera) {
+export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics, getUnicornState, camera, grass) {
   const shards = [], shardsGroup = Grp(), breakGroup = Grp(), taskGroup = Grp();
   shardsGroup.add(breakGroup, taskGroup);
   scene.add(shardsGroup);
 
-  const shardGeo = new T.OctahedronGeometry(1, 0), shellGeo = new T.IcosahedronGeometry(1.6, 1), fragGeo = new T.DodecahedronGeometry(0.42);
+  const shardGeo = new T.OctahedronGeometry(1), shellGeo = new T.IcosahedronGeometry(1.6, 1), fragGeo = new T.DodecahedronGeometry(0.42);
   const beaconGeo = CGeo(.06, .6, 50, 4); beaconGeo.translate(0, 25, 0);
   const breakFragments = [], camPos = V3(0, 0, 0), camDir = V3(0, 0, 0);
   const rnd = () => Math.random() - .5;
@@ -49,13 +49,11 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
     core.position.set(data.pos[0], py, data.pos[2]);
 
     const shell = Msh(shellGeo, createOrbMaterial(data.color));
-    shell.position.copy(core.position);
-
     const light = new T.PointLight(data.color, 2.2, 22);
-    light.position.copy(core.position);
-
     const beacon = Msh(beaconGeo, BMat({ color: data.color, transparent: true, opacity: 0.4, blending: 2 }));
-    beacon.position.copy(core.position);
+    beacon.position.copy(shell.position.copy(light.position.copy(core.position)));
+    beacon.renderOrder = 4;
+    shell.renderOrder = 2;
 
     shardsGroup.add(shell, core, light, beacon);
     core.userData = shell.userData = { index, data, initialY: py };
@@ -66,8 +64,9 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   let activeTask = null;
 
   const clearTask = () => {
-    while (taskGroup.children.length) taskGroup.remove(taskGroup.children[0]);
+    taskGroup.clear();
     activeTask = null;
+    if (grass) grass.uniforms.uFly.value.y = -999;
   };
 
   const unlockShard = (s) => {
@@ -83,7 +82,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
   const addNode = (s, x, y, z) => {
     const node = Msh(fragGeo, BMat({ color: s.data.color }));
     node.position.set(s.data.pos[0] + x, s.data.pos[1] + y, s.data.pos[2] + z);
-    node.userData = { isTaskNode: true };
+    node.userData = { isTaskNode: 1 };
     taskGroup.add(node);
     return node;
   };
@@ -120,7 +119,14 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
     activeTask = { idx, type: idx === 1 ? 'play' : (idx === 5 ? 'mystery' : 'art'), step: 0 };
     if (idx === 1) {
       const node = addNode(s, 0, 0, 0);
+      node.material.visible = false;
       node.add(new T.PointLight(0xff7700, 3.5, 22));
+      const fm = BMat({ color: 0xffbb22 });
+      for (let i = 0; i < 3; i++) {
+        const fly = Msh(fragGeo, fm);
+        fly.scale.setScalar(.15);
+        node.add(fly);
+      }
       const a = Math.random() * 6.28, r = 14 + Math.random() * 20, px = Math.cos(a) * r, pz = -12 + Math.sin(a) * r;
       node.position.set(px, getTerrainHeight(px, pz) + 1.2, pz);
       vrHud?.show('🟠 FIREFLIES', s.data.phrase, 'Progress: [0/5]');
@@ -269,8 +275,12 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
           } else if (activeTask.type === 'play') {
             const node = taskGroup.children[0];
             if (node) {
-              node.rotation.y += delta * 2.5;
-              node.position.y = getTerrainHeight(node.position.x, node.position.z) + 1.2 + Math.sin(performance.now() * 0.004) * 0.25;
+              node.position.y = getTerrainHeight(node.position.x, node.position.z) + 1.2 + Math.sin(t * 2) * .25;
+              for (let i = 1; i < 4; i++) {
+                const c = node.children[i], a = t * 3 + i;
+                if (c) c.position.set(Math.sin(a) * .6, Math.sin(a * 1.4) * .3, Math.cos(a) * .6);
+              }
+              if (grass) grass.uniforms.uFly.value.copy(node.position);
             }
           } else if (activeTask.type === 'mystery') {
             activeTask.rotY = (activeTask.rotY || 0) + delta * 0.32;
