@@ -32,6 +32,7 @@ export function createNarrative(game) {
       mgr.act = 0;
       game.setAwakened(1);
       moveCam(getSlidePoint(1), getSlidePoint(0.96));
+      audio.playVoice('intro');
       game.vrHud?.show('2:43 AM • TERMINAL', 'Desk cold. Numb with grief since the cliff... Maya calls from the dream valley.', 'Trigger / Click to Enter');
     },
     triggerSlide() {
@@ -56,6 +57,7 @@ export function createNarrative(game) {
           setTimeout(() => {
             mgr.act = 4;
             game.unicornState = 'ascend';
+            audio.playVoice('finale');
             game.vrHud?.showEndingNote?.(
               "Our horse can fly! 🦄\nI didn't save you from that cliff to live in grey.\nChase fireflies. Find me in the rainbow.\nLive with color again, my love... 🌸🌈"
             );

@@ -15,6 +15,8 @@ function tone(type, freq, dur, gainLevel, slideTo = 0) {
 
 const rustle = () => tone('triangle', 320 + Math.random() * 80, 0.04, 0.08);
 
+let currentVoice = null;
+
 export const audio = {
   init() {
     if (ctx) return;
@@ -52,6 +54,50 @@ export const audio = {
     }, 280);
   },
   tone,
+  playVoice(filename, onEnded) {
+    if (currentVoice) {
+      try { currentVoice.pause(); currentVoice.currentTime = 0; } catch (_) {}
+    }
+    const paths = [`./audio/maya/${filename}.mp3`, `./public/audio/maya/${filename}.mp3`];
+    let pathIdx = 0;
+    const audioEl = new Audio(paths[0]);
+    audioEl.volume = 0.95;
+    if (ctx && masterGain) {
+      masterGain.gain.cancelScheduledValues(ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.25);
+    }
+    const restore = () => {
+      if (ctx && masterGain) {
+        masterGain.gain.cancelScheduledValues(ctx.currentTime);
+        masterGain.gain.linearRampToValueAtTime(0.38, ctx.currentTime + 0.4);
+      }
+      if (currentVoice === audioEl) currentVoice = null;
+      if (onEnded) onEnded();
+    };
+    audioEl.addEventListener('ended', restore);
+    audioEl.addEventListener('error', () => {
+      pathIdx++;
+      if (pathIdx < paths.length) {
+        audioEl.src = paths[pathIdx];
+        audioEl.play().catch(restore);
+      } else {
+        restore();
+      }
+    });
+    audioEl.play().catch(restore);
+    currentVoice = audioEl;
+    return audioEl;
+  },
+  stopVoice() {
+    if (currentVoice) {
+      try { currentVoice.pause(); currentVoice.currentTime = 0; } catch (_) {}
+      currentVoice = null;
+      if (ctx && masterGain) {
+        masterGain.gain.cancelScheduledValues(ctx.currentTime);
+        masterGain.gain.linearRampToValueAtTime(0.38, ctx.currentTime + 0.3);
+      }
+    }
+  },
   playFootstep() { tone('triangle', 95 + Math.random() * 20, 0.06, 0.14, 45); rustle(); },
   playHoofbeat() {
     tone('triangle', 130 + Math.random() * 20, 0.07, 0.22, 60); rustle();

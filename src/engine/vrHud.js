@@ -26,9 +26,9 @@ export function createVRHUD(scene, camera) {
 
   let callState = 'idle', callTimer = 0, talkStep = 0, onCallComplete = null, lastAction = 0;
   const dial = [
-    'Still at work? No IT talk on our road trip!',
-    'I packed the camera for the cliff overlook.',
-    'I love you so much. See you at home.'
+    'Still stuck at work? Remember: no IT talk once we hit the highway! I bought peach gummies.',
+    'I packed my vintage 35mm camera for the cliff overlook. The sunset will be pure gold.',
+    'I love you so much. Do not drive too fast tonight. See you at home, my love.'
   ];
 
   const rr = (x, y, w, h, r = 20) => {
@@ -184,15 +184,16 @@ export function createVRHUD(scene, camera) {
         callState = 'talking';
         talkStep = 0;
         audio.playPeacefulChords();
-        audio.playMumble(380);
+        audio.playVoice('shard2_yellow_1');
         hud.show('📞 MAYA VOICEMAIL', dial[0], 'Press [X] to Continue');
       } else if (callState === 'talking') {
         talkStep++;
         if (talkStep < 3) {
-          audio.playMumble(380 + talkStep * 20);
+          audio.playVoice(talkStep === 1 ? 'shard2_yellow_2' : 'shard2_yellow_3');
           hud.show('📞 MAYA VOICEMAIL', dial[talkStep], talkStep === 2 ? 'Press [X] to Shatter Guilt' : 'Press [X] to Continue');
         } else {
           callState = 'idle';
+          audio.stopVoice?.();
           if (pulseHaptics) pulseHaptics('both', 0.9, 250);
           audio.playPluck(880, 0.6, 0.3);
           if (onCallComplete) onCallComplete();
@@ -203,6 +204,7 @@ export function createVRHUD(scene, camera) {
     resetCall: () => {
       if (callState !== 'idle') {
         callState = 'idle';
+        audio.stopVoice?.();
         redraw();
       }
     },
@@ -213,7 +215,7 @@ export function createVRHUD(scene, camera) {
           callState = 'talking';
           talkStep = 0;
           audio.playPeacefulChords();
-          audio.playMumble(380);
+          audio.playVoice('shard2_yellow_1');
           hud.show('📞 MAYA ON CALL', dial[0], 'Press [X] to Continue');
         }
       }

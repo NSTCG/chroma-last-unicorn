@@ -5,13 +5,13 @@ import { getTerrainHeight } from '../models/world.js';
 import { T, Grp, Msh, BMat, SMat, Col, CGeo, V3 } from '../engine/three.js';
 
 export const SHARDS_DATA = [
-  ['Red', 0xff2244, -25, -6, 9.2, 'Rain: You worked till eyes burned. Catch 3 sparks.'],
-  ['Orange', 0xff7700, 25, -6, 9.2, 'Fireflies: Catch orange clumps under grass! [0/5]'],
-  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Voicemail: Her voice cuts the cold silence.'],
-  ['Green', 0x11cc44, 18, 12, 9.5, 'Sky: Not down where I fell. Look to stars [20s].'],
-  ['Blue', 0x00aaff, -24, -18, 10.8, 'Breathe: When grief chokes you, be still [20s].'],
-  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Cliff: Car skidded. I pushed you clear. Forgive.'],
-  ['Violet', 0xcc22ee, 0, -28, 12.8, '3rd Date: What if our horse could fly? Mount up.']
+  ['Red', 0xff2244, -25, -6, 9.2, 'The storm cut the lights. I lit candles on the carpet until you smiled. Catch 3 sparks.'],
+  ['Orange', 0xff7700, 25, -6, 9.2, "Camping by the lake, chasing fireflies barefoot... I'm still here in the grass. Catch 5 fireflies."],
+  ['Yellow', 0xffcc00, -18, 12, 9.5, 'Voicemail • Friday 4:18 PM: Her voice cuts through the cold silence.'],
+  ['Green', 0x11cc44, 18, 12, 9.5, "Don't look down at where the tires skidded. Look up at our stars with me [20s]."],
+  ['Blue', 0x00aaff, -24, -18, 10.8, 'Hospital panic... I held your cold hands until our hearts beat as one. Be still [20s].'],
+  ['Indigo', 0x5533ee, 24, -18, 10.5, 'Black ice... I threw myself over you because I love you. Forgive yourself.'],
+  ['Violet', 0xcc22ee, 0, -28, 12.8, "Our 3rd date carousel joke: what if our unicorn could fly? Mount up, adventurer."]
 ].map(([name, color, x, z, y, phrase], index) => ({ name, color, pos: [x, y, z], phrase, index }));
 
 function createOrbMaterial(color) {
@@ -91,6 +91,11 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
     const idx = s.data.index;
     clearTask();
     vrHud?.resetCall?.();
+
+    const voiceKeys = ['shard0_red', 'shard1_orange', null, 'shard3_green', 'shard4_blue', 'shard5_indigo', 'shard6_violet'];
+    if (voiceKeys[idx]) {
+      audio.playVoice(voiceKeys[idx]);
+    }
 
     if (idx === 2) {
       vrHud?.startCallTask?.(s, () => unlockShard(s));
