@@ -55,12 +55,12 @@ function initGame() {
     }
   };
 
-  const getInteractive = () => [...shards.getInteractiveMeshes(), ...unicorn.getInteractiveMeshes()];
+  const getInteractive = () => [...shards.getInteractiveMeshes(), ...unicorn.getInteractiveMeshes(), vrHud.phoneGroup];
   const onSelect = (mesh, isKeyX = false) => {
     if (narrative.act === 0) return narrative.triggerSlide();
     if (mesh?.userData?.isTaskNode || mesh?.userData?.index != null) return shards.collect(mesh);
     if (mesh?.userData?.isUnicorn || (isMounted && !mesh && !isKeyX)) return toggleMount();
-    if (vrHud.isCalling) return vrHud.triggerCallAction();
+    if (mesh?.userData?.isPhone || isKeyX || vrHud.isCalling) return vrHud.triggerCallAction();
   };
 
   const pcControls = setupPCControls(camera, renderer.domElement, getInteractive, onSelect, getUState, renderer);
@@ -68,13 +68,14 @@ function initGame() {
 
   vrHud.setHaptics?.(pulseHaptics);
 
-  const overlay = document.getElementById('o'), btnVr = document.getElementById('q');
-  const launchVR = () => {
+  const overlay = document.getElementById('o'), btnVr = document.getElementById('q'), btnPlay = document.getElementById('p');
+  const launchExperience = (isVR = false) => {
     if (overlay) overlay.classList.add('hidden');
     narrative.startExperience();
-    gameObj.xr.startVR();
+    if (isVR) gameObj.xr.startVR();
   };
-  if (btnVr) btnVr.addEventListener('click', launchVR);
+  if (btnVr) btnVr.addEventListener('click', () => launchExperience(true));
+  if (btnPlay) btnPlay.addEventListener('click', () => launchExperience(false));
 
   const clock = new window.THREE.Clock();
   renderer.setAnimationLoop(() => {

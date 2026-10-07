@@ -1,4 +1,6 @@
-export const T = window.THREE;
+export const T = (typeof window !== 'undefined' && window.THREE)
+  ? window.THREE
+  : new Proxy({}, { get: (_, prop) => window.THREE?.[prop] });
 export const V3 = (x, y, z) => new T.Vector3(x, y, z);
 export const Grp = () => new T.Group();
 export const Msh = (g, m) => new T.Mesh(g, m);

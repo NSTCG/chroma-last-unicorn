@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
         }
       },
       rollupOptions: {
-        external: ['/2026/webxr/three.js'],
+        external: ['/2026/webxr/three.js', './2026/webxr/three.js'],
         output: {
           manualChunks: undefined,
           inlineDynamicImports: true

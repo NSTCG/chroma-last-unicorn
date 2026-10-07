@@ -3,14 +3,19 @@ import { T, Grp, Msh, BMat, PGeo } from './three.js';
 
 export function createVRHUD(scene, camera) {
   const canvas = document.createElement('canvas');
-  canvas.width = 640; canvas.height = 1080;
+  canvas.width = 960; canvas.height = 1620;
   const ctx = canvas.getContext('2d');
   const tex = new T.CanvasTexture(canvas);
+  tex.minFilter = tex.magFilter = T.LinearFilter;
+  tex.generateMipmaps = false;
 
   const phoneGroup = Grp();
   const bodyMesh = Msh(PGeo(.125, .245), BMat({ color: 0x151520 }));
-  const screenMesh = Msh(PGeo(.118, .236), BMat({ map: tex, transparent: true, depthTest: true, depthWrite: false, side: 2 }));
-  screenMesh.position.z = .0045;
+  const screenMesh = Msh(PGeo(.118, .236), BMat({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
+  screenMesh.position.z = .005;
+  screenMesh.renderOrder = 999;
+  bodyMesh.renderOrder = 998;
+  bodyMesh.userData.isPhone = screenMesh.userData.isPhone = true;
   phoneGroup.add(bodyMesh, screenMesh);
 
   if (camera) camera.add(phoneGroup);
@@ -50,16 +55,18 @@ export function createVRHUD(scene, camera) {
     return y;
   };
 
-  const f1 = 'bold 15px sans-serif', f2 = 'bold 24px sans-serif';
+  const f0 = 'bold 11px system-ui, -apple-system, sans-serif';
+  const f1 = 'bold 13px system-ui, -apple-system, sans-serif';
+  const f2 = 'bold 19px system-ui, -apple-system, sans-serif';
 
   function redraw() {
-    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.setTransform(3, 0, 0, 3, 0, 0);
     ctx.clearRect(0, 0, 320, 540);
     ctx.fillStyle = '#0a0a14';
     rr(8, 8, 304, 524, 28);
-    ctx.strokeStyle = '#64c8ff73'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.strokeStyle = '#64c8ff88'; ctx.lineWidth = 2.5; ctx.stroke();
 
-    ctx.fillStyle = '#fffa'; ctx.font = f1;
+    ctx.fillStyle = '#fffc'; ctx.font = f0;
     ctx.fillText('🌈 CHROMA', 24, 38);
     ctx.textAlign = 'right'; ctx.fillText('100% ⚡', 296, 38); ctx.textAlign = 'left';
 
@@ -69,59 +76,62 @@ export function createVRHUD(scene, camera) {
       ctx.fill();
     }
 
-    ctx.fillStyle = '#121222f0';
-    rr(16, 92, 288, 412, 20);
+    ctx.fillStyle = '#121222f5';
+    rr(16, 92, 288, 414, 20);
 
     if (callState !== 'idle') {
       const end = callState === 'ending', live = callState === 'talking' || end, ring = callState === 'ringing', sc = end ? '#fd0' : (live ? '#2c7' : '#f7c');
-      ctx.fillStyle = sc; ctx.font = f1;
+      ctx.fillStyle = sc; ctx.font = f0;
       ctx.fillText(end ? '💌 MAYA NOTE' : (live ? '🟢 CALL ACTIVE' : (ring ? '📞 DIALING...' : '📞 INCOMING')), 32, 122);
 
-      ctx.beginPath(); ctx.arc(160, 178, 28, 0, 6.28);
+      ctx.beginPath(); ctx.arc(160, 172, 26, 0, 6.28);
       ctx.fillStyle = '#795290'; ctx.fill();
-      ctx.strokeStyle = sc; ctx.lineWidth = 3; ctx.stroke();
+      ctx.strokeStyle = sc; ctx.lineWidth = 2.5; ctx.stroke();
       ctx.fillStyle = '#fff'; ctx.font = f2; ctx.textAlign = 'center';
-      ctx.fillText('🌸', 160, 186);
+      ctx.fillText('🌸', 160, 179);
 
       ctx.fillStyle = '#fff'; ctx.font = f2;
-      ctx.fillText('Maya', 160, 228);
+      ctx.fillText('Maya', 160, 216);
 
       ctx.fillStyle = end ? '#fd0' : (live ? '#2c7' : '#a0d8ef'); ctx.font = f1;
-      ctx.fillText(end ? 'Mind Palace 🌈' : (live ? 'Connected 📶' : (ring ? 'Ringing... 📞' : 'Signal Active')), 160, 246);
+      ctx.fillText(end ? 'Mind Palace 🌈' : (live ? 'Connected 📶' : (ring ? 'Ringing... 📞' : 'Signal Active')), 160, 234);
 
       ctx.textAlign = 'left';
-      ctx.fillStyle = '#1c1c34d9';
-      rr(28, end ? 254 : 262, 264, end ? 172 : 154, 14);
-      ctx.strokeStyle = '#64c8ff33'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#1c1c34ee';
+      rr(28, end ? 250 : 256, 264, end ? 172 : 156, 14);
+      ctx.strokeStyle = '#64c8ff44'; ctx.lineWidth = 1.5; ctx.stroke();
 
       ctx.fillStyle = '#fff'; ctx.font = f1;
-      wrapText(sub || title, end ? 36 : 40, end ? 266 : 286, end ? 248 : 240, end ? 18 : 23);
+      wrapText(sub || title, 38, end ? 276 : 284, 244, end ? 18 : 22);
 
       ctx.fillStyle = (talkStep === 2) ? '#f36' : (end ? '#fd0' : '#2c7');
-      rr(36, 436, 248, 44, 22);
+      rr(36, 434, 248, 44, 22);
 
       ctx.fillStyle = '#0a0a14'; ctx.font = f1; ctx.textAlign = 'center';
-      ctx.fillText(act || '🌈 RESTORED', 160, 463);
+      ctx.fillText(act || '🌈 RESTORED', 160, 461);
       ctx.textAlign = 'left';
     } else {
-      ctx.fillStyle = '#ff79c6'; ctx.font = f1;
-      ctx.fillText('NARRATIVE DISPATCH', 36, 126);
+      ctx.fillStyle = '#ff79c6'; ctx.font = f0;
+      ctx.fillText('NARRATIVE DISPATCH', 34, 124);
 
       ctx.fillStyle = '#fff'; ctx.font = f2;
-      let curY = wrapText(title, 36, 166, 248, 28);
+      let curY = wrapText(title, 34, 162, 252, 26);
 
       if (sub) {
         ctx.fillStyle = '#a0d8ef'; ctx.font = f1;
-        curY = wrapText(sub, 36, curY + 12, 248, 24);
+        curY = wrapText(sub, 34, curY + 14, 252, 22);
       }
 
       if (act) {
         ctx.fillStyle = '#ffea79'; ctx.font = f1;
-        wrapText(act, 36, curY + 16, 248, 24);
+        rr(30, Math.min(curY + 12, 420), 260, 40, 16);
+        ctx.fillStyle = '#0a0a14'; ctx.textAlign = 'center';
+        ctx.fillText(act, 160, Math.min(curY + 37, 445));
+        ctx.textAlign = 'left';
       }
     }
 
-    tex.version++;
+    tex.needsUpdate = true;
   }
 
   redraw();
@@ -218,9 +228,15 @@ export function createVRHUD(scene, camera) {
         }
       } else if (cam) {
         if (phoneGroup.parent !== cam) cam.add(phoneGroup);
-        phoneGroup.position.set(0.14, -0.12, -0.32);
-        phoneGroup.rotation.set(-0.35, -0.22, 0.05);
-        phoneGroup.scale.setScalar(1);
+        if (typeof window !== 'undefined' && window.innerWidth < window.innerHeight) {
+          phoneGroup.position.set(0.02, -0.13, -0.32);
+          phoneGroup.rotation.set(-0.28, -0.06, 0.02);
+          phoneGroup.scale.setScalar(0.92);
+        } else {
+          phoneGroup.position.set(0.14, -0.12, -0.32);
+          phoneGroup.rotation.set(-0.35, -0.22, 0.05);
+          phoneGroup.scale.setScalar(1);
+        }
       }
     }
   };

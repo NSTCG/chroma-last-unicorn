@@ -69,7 +69,7 @@ async function runBuildPipeline() {
       const codeToPack = minified.code || scriptFound.code;
 
       // Match any existing Three.js script tags
-      const threeRegex = /<script\b[^>]*>(?:import\*as T from["']\/2026\/webxr\/three\.js["'][^<]*|[^<]*src=[^>]*three[^>]*)<\/script>/i;
+      const threeRegex = /<script\b[^>]*>(?:import[\s*]*as\s+T\s+from\s*["'](?:\.|\/)?\/2026\/webxr\/three\.js["'][^<]*|[^<]*src=[^>]*three[^>]*)<\/script>/i;
       const threeMatch = html.match(threeRegex);
 
       let bestPacked = null, minZipLen = Infinity;
