@@ -13,26 +13,11 @@ function tone(type, freq, dur, gainLevel, slideTo = 0) {
   osc.start(); osc.stop(t + dur);
 }
 
+const rustle = () => tone('triangle', 320 + Math.random() * 80, 0.04, 0.08);
+
 let currentVoice = null;
 let currentBGM = null;
-let windAudio = null;
 let targetBgmVol = 0.52;
-
-function playSFX(name, vol = 0.8) {
-  const paths = [`./audio/sfx/${name}.mp3`, `./public/audio/sfx/${name}.mp3`];
-  let idx = 0;
-  const a = new Audio(paths[0]);
-  a.volume = Math.max(0, Math.min(1, vol));
-  a.addEventListener('error', () => {
-    idx++;
-    if (idx < paths.length) {
-      a.src = paths[idx];
-      a.play().catch(() => {});
-    }
-  });
-  a.play().catch(() => {});
-  return a;
-}
 
 export const audio = {
   init() {
@@ -40,7 +25,7 @@ export const audio = {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     masterGain = ctx.createGain();
-    masterGain.gain.value = 0.35;
+    masterGain.gain.value = 0.36;
     masterGain.connect(ctx.destination);
 
     const osc = ctx.createOscillator(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
@@ -49,39 +34,29 @@ export const audio = {
     osc.start();
     droneFilter = flt;
 
+    // Gentle, soothing procedural grass sway (low-mid bandpass, non-piercing)
     try {
       const b = ctx.createBuffer(1, 4096, ctx.sampleRate), d = b.getChannelData(0);
       for (let i = 0; i < 4096; i++) d[i] = Math.random() * 2 - 1;
       const nSrc = ctx.createBufferSource();
       nSrc.buffer = b; nSrc.loop = true;
       const wFlt = ctx.createBiquadFilter(), wGn = ctx.createGain();
-      wFlt.type = 'bandpass'; wFlt.frequency.value = 380; wFlt.Q.value = 1.8;
-      wGn.gain.value = 0.14;
+      wFlt.type = 'bandpass'; wFlt.frequency.value = 320; wFlt.Q.value = 1.4;
+      wGn.gain.value = 0.08;
       nSrc.connect(wFlt); wFlt.connect(wGn); wGn.connect(masterGain);
       nSrc.start();
       windFilter = wFlt;
     } catch (_) {}
 
-    this.startWind();
+    setInterval(() => {
+      if (!ctx || ctx.state !== 'running') return;
+      step = (step + 1) % 16;
+      if (windFilter) windFilter.frequency.value = 310 + Math.sin(performance.now() * 0.0006) * 90;
+      if (awakenedLevel > 0.15 && step % 2 === 0) tone('triangle', scale[(step >> 1) % 8] * (step % 4 === 0 ? 2 : 1), 0.25, 0.16);
+      if (awakenedLevel > 0.45 && step % 2 === 1) tone('triangle', scale[(step * 3) % 8] * 2, 0.15, 0.12);
+    }, 280);
   },
   tone,
-
-  startWind() {
-    if (windAudio) return;
-    const paths = ['./audio/sfx/wind.mp3', './public/audio/sfx/wind.mp3'];
-    let idx = 0;
-    windAudio = new Audio(paths[0]);
-    windAudio.loop = true;
-    windAudio.volume = 0.32;
-    windAudio.addEventListener('error', () => {
-      idx++;
-      if (idx < paths.length) {
-        windAudio.src = paths[idx];
-        windAudio.play().catch(() => {});
-      }
-    });
-    windAudio.play().catch(() => {});
-  },
 
   playBGM(trackKey) {
     const levelNames = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
@@ -141,9 +116,8 @@ export const audio = {
     const audioEl = new Audio(paths[0]);
     audioEl.volume = 0.95;
 
-    // Duck background music and wind while Maya speaks
+    // Duck background music while Maya speaks
     if (currentBGM) currentBGM.volume = targetBgmVol * 0.35;
-    if (windAudio) windAudio.volume = 0.15;
     if (ctx && masterGain) {
       masterGain.gain.cancelScheduledValues(ctx.currentTime);
       masterGain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.25);
@@ -151,10 +125,9 @@ export const audio = {
 
     const restore = () => {
       if (currentBGM) currentBGM.volume = targetBgmVol;
-      if (windAudio) windAudio.volume = 0.32;
       if (ctx && masterGain) {
         masterGain.gain.cancelScheduledValues(ctx.currentTime);
-        masterGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.4);
+        masterGain.gain.linearRampToValueAtTime(0.36, ctx.currentTime + 0.4);
       }
       if (currentVoice === audioEl) currentVoice = null;
       if (onEnded) onEnded();
@@ -180,35 +153,33 @@ export const audio = {
       try { currentVoice.pause(); currentVoice.currentTime = 0; } catch (_) {}
       currentVoice = null;
       if (currentBGM) currentBGM.volume = targetBgmVol;
-      if (windAudio) windAudio.volume = 0.32;
       if (ctx && masterGain) {
         masterGain.gain.cancelScheduledValues(ctx.currentTime);
-        masterGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.3);
+        masterGain.gain.linearRampToValueAtTime(0.36, ctx.currentTime + 0.3);
       }
     }
   },
 
   playFootstep(surface = 'grass') {
-    playSFX(surface === 'rock' ? 'footstep_rock' : 'footstep_grass', surface === 'rock' ? 0.78 : 0.68);
-  },
-
-  playBrushGrass() {
-    playSFX('brush_grass', 0.42);
-  },
-
-  playGrassWoosh() {
-    playSFX('grass_woosh', 0.58);
+    if (surface === 'rock') {
+      tone('triangle', 180 + Math.random() * 25, 0.04, 0.15, 75);
+    } else {
+      tone('triangle', 95 + Math.random() * 20, 0.06, 0.14, 45);
+      rustle();
+    }
   },
 
   playHoofbeat() {
-    playSFX('unicorn_gallop', 0.88);
+    tone('triangle', 130 + Math.random() * 20, 0.07, 0.22, 60);
+    rustle();
+    setTimeout(() => tone('triangle', 155 + Math.random() * 20, 0.06, 0.16, 70), 75);
   },
 
   playChime(shardIndex = 0) {
     const bf = scale[shardIndex % 8] * 2;
     [1, 1.5, 2].forEach((m, i) => tone('sine', bf * m, 1.6, 0.26 / (i + 1)));
   },
-  playResonate() { playSFX('grass_woosh', 0.45); tone('triangle', 115, 0.35, 0.32, 135); },
+  playResonate() { tone('triangle', 115, 0.35, 0.32, 135); },
   playRingtone() { [0, 900].forEach(d => setTimeout(() => tone('sine', 440, 0.7, 0.2), d)); },
   playPeacefulChords() { [330, 392, 494, 587].forEach((f, i) => setTimeout(() => tone('sine', f, 2.5, 0.08), i * 150)); },
   playPluck(freq, dur, gain) { tone('triangle', freq, dur, gain, freq * 0.5); },

@@ -6,10 +6,9 @@ export function updateRiding(moveDir, unicorn, obj, delta, isVR, timers) {
   if (isMoving) {
     moveDir.normalize();
     timers.hoof += delta;
-    if (timers.hoof > 0.32) {
+    if (timers.hoof > 0.28) {
       timers.hoof = 0;
       audio.playHoofbeat();
-      if (Math.random() < 0.35) audio.playGrassWoosh();
       if (timers.haptics) timers.haptics('both', 0.28, 55);
     }
   }
@@ -27,7 +26,6 @@ export function updateWalking(moveDir, obj, delta, isVR, timers) {
       timers.foot = 0;
       const isRock = isRockSurface(obj.position.x, obj.position.y, obj.position.z);
       audio.playFootstep(isRock ? 'rock' : 'grass');
-      if (!isRock) audio.playBrushGrass();
     }
   }
   const gy = getTerrainHeight(obj.position.x, obj.position.z) + (isVR ? 0.75 : 1.85);
