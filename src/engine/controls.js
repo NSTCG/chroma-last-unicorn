@@ -78,35 +78,50 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
       }
     });
 
-    // Touch controls for mobile / tablet
-    domElement.addEventListener('touchstart', (e) => {
+    // Touch controls for mobile / tablet (Left half: WASD movement, Right half: Look around, No visual joysticks)
+    const onTouchStart = (e) => {
       if (renderer?.xr?.isPresenting) return;
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      try { e.preventDefault(); } catch (_) {}
+
+      const halfW = window.innerWidth * 0.5;
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
-        touchStarts.set(t.identifier, { x: t.clientX, y: t.clientY, time: performance.now(), dist: 0 });
+        touchStarts.set(t.identifier, {
+          x: t.clientX,
+          y: t.clientY,
+          lastX: t.clientX,
+          lastY: t.clientY,
+          time: performance.now(),
+          dist: 0
+        });
 
-        if (t.clientX < innerWidth * 0.5 && moveTouchId === null) {
-          // Left half -> movement joystick
+        if (t.clientX < halfW && moveTouchId === null) {
+          // Left half -> WASD movement
           moveTouchId = t.identifier;
           joyStartX = t.clientX;
           joyStartY = t.clientY;
-          joyDirX = joyDirY = 0;
-        } else if (t.clientX >= innerWidth * 0.5 && lookTouchId === null) {
-          // Right half -> camera look
+          joyDirX = 0;
+          joyDirY = 0;
+        } else if (t.clientX >= halfW && lookTouchId === null) {
+          // Right half -> Look around
           lookTouchId = t.identifier;
           lastLookX = t.clientX;
           lastLookY = t.clientY;
         }
       }
-    }, { passive: false });
+    };
 
-    domElement.addEventListener('touchmove', (e) => {
+    const onTouchMove = (e) => {
       if (renderer?.xr?.isPresenting) return;
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      try { e.preventDefault(); } catch (_) {}
+
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
         const record = touchStarts.get(t.identifier);
         if (record) {
-          record.dist += Math.hypot(t.clientX - (record.lastX ?? record.x), t.clientY - (record.lastY ?? record.y));
+          record.dist += Math.hypot(t.clientX - record.lastX, t.clientY - record.lastY);
           record.lastX = t.clientX;
           record.lastY = t.clientY;
         }
@@ -115,44 +130,106 @@ export function setupPCControls(camera, domElement, getInteractiveObjects, onSel
           const dx = t.clientX - joyStartX;
           const dy = t.clientY - joyStartY;
           const len = Math.hypot(dx, dy);
-          const maxR = 45;
-          const factor = Math.min(1, len / maxR);
-          joyDirX = len > 6 ? (dx / len) * factor : 0;
-          joyDirY = len > 6 ? (dy / len) * factor : 0;
+          const deadZone = 6;
+          const maxR = 48;
+
+          // Pull anchor along when dragged far so stopping and reversing is instantaneous
+          if (len > maxR) {
+            joyStartX = t.clientX - (dx / len) * maxR;
+            joyStartY = t.clientY - (dy / len) * maxR;
+          }
+
+          if (len > deadZone) {
+            const factor = Math.min(1, (len - deadZone) / (maxR - deadZone));
+            joyDirX = (dx / len) * factor;
+            joyDirY = (dy / len) * factor;
+          } else {
+            joyDirX = 0;
+            joyDirY = 0;
+          }
         } else if (t.identifier === lookTouchId) {
           const dx = t.clientX - lastLookX;
           const dy = t.clientY - lastLookY;
           lastLookX = t.clientX;
           lastLookY = t.clientY;
+
+          const cdx = Math.max(-100, Math.min(100, dx));
+          const cdy = Math.max(-100, Math.min(100, dy));
+
           euler.setFromQuaternion(camera.quaternion);
-          euler.y -= dx * 0.004;
-          euler.x = Math.max(-1.45, Math.min(1.45, euler.x - dy * 0.004));
+          euler.y -= cdx * 0.0038;
+          euler.x = Math.max(-1.45, Math.min(1.45, euler.x - cdy * 0.0038));
+          euler.z = 0;
           camera.quaternion.setFromEuler(euler);
         }
       }
-    }, { passive: false });
+    };
 
-    const handleTouchEnd = (e) => {
+    const onTouchEnd = (e) => {
+      if (renderer?.xr?.isPresenting) return;
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      try { e.preventDefault(); } catch (_) {}
+
+      const now = performance.now();
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
         const record = touchStarts.get(t.identifier);
-        if (record && record.dist < 15 && (performance.now() - record.time) < 320) {
+        if (record && record.dist < 15 && (now - record.time) < 320) {
           doRaycast(t.clientX, t.clientY);
         }
         touchStarts.delete(t.identifier);
 
         if (t.identifier === moveTouchId) {
           moveTouchId = null;
-          joyDirX = joyDirY = 0;
+          joyDirX = 0;
+          joyDirY = 0;
         }
         if (t.identifier === lookTouchId) {
           lookTouchId = null;
         }
       }
+
+      if (e.touches) {
+        if (e.touches.length === 0) {
+          moveTouchId = null;
+          lookTouchId = null;
+          joyDirX = 0;
+          joyDirY = 0;
+          touchStarts.clear();
+        } else {
+          const halfW = window.innerWidth * 0.5;
+          if (moveTouchId === null) {
+            for (let i = 0; i < e.touches.length; i++) {
+              const ct = e.touches[i];
+              if (ct.clientX < halfW && ct.identifier !== lookTouchId) {
+                moveTouchId = ct.identifier;
+                joyStartX = ct.clientX;
+                joyStartY = ct.clientY;
+                joyDirX = 0;
+                joyDirY = 0;
+                break;
+              }
+            }
+          }
+          if (lookTouchId === null) {
+            for (let i = 0; i < e.touches.length; i++) {
+              const ct = e.touches[i];
+              if (ct.clientX >= halfW && ct.identifier !== moveTouchId) {
+                lookTouchId = ct.identifier;
+                lastLookX = ct.clientX;
+                lastLookY = ct.clientY;
+                break;
+              }
+            }
+          }
+        }
+      }
     };
 
-    domElement.addEventListener('touchend', handleTouchEnd);
-    domElement.addEventListener('touchcancel', handleTouchEnd);
+    domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: false });
+    window.addEventListener('touchcancel', onTouchEnd, { passive: false });
   }
 
   // Mobile on-screen action button

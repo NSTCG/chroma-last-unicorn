@@ -63,8 +63,18 @@ export function createNarrative(game) {
             game.vrHud?.showEndingNote?.(
               "Our horse can fly! 🦄\nI didn't save you from that cliff to live in grey.\nChase fireflies. Find me in the rainbow.\nLive with color again, my love... 🌸🌈"
             );
+            setTimeout(() => {
+              if (mgr.act === 4) audio.playBGM('intro');
+            }, 24000);
           }, 2800);
         }, 800);
+      } else {
+        // Revert to initial audio once level is completed and no new level is active
+        setTimeout(() => {
+          if (!game.shards?.getActiveTask?.() && mgr.collectedCount < 7) {
+            audio.playBGM('intro');
+          }
+        }, 1600);
       }
     },
     update(delta) {
@@ -78,7 +88,7 @@ export function createNarrative(game) {
         isSliding = false;
         mgr.act = 1;
         game.setAwakened(0);
-        audio.playBGM(0);
+        audio.playBGM('intro');
         moveCam(V3(0, 1.7, 5), V3(0, 1.7, -12));
         game.vrHud?.show('💔 COLORLESS GRIEF', 'Awaken 7 memories of Maya to heal.');
       }

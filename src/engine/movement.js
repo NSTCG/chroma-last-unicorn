@@ -1,27 +1,36 @@
 import { getTerrainHeight, isRockSurface } from '../models/world.js';
 import { audio } from '../audio/synth.js';
+import { V3 } from './three.js';
+
+const tempDir = V3(0, 0, 0);
 
 export function updateRiding(moveDir, unicorn, obj, delta, isVR, timers) {
-  const isMoving = moveDir.lengthSq() > 0.001;
+  const lenSq = moveDir.lengthSq();
+  const isMoving = lenSq > 0.001;
   if (isMoving) {
-    moveDir.normalize();
-    timers.hoof += delta;
+    const len = Math.sqrt(lenSq);
+    const speedFactor = Math.min(1, len);
+    tempDir.copy(moveDir).divideScalar(len);
+    timers.hoof += delta * speedFactor;
     if (timers.hoof > 0.28) {
       timers.hoof = 0;
       audio.playHoofbeat();
       if (timers.haptics) timers.haptics('both', 0.28, 55);
     }
+    unicorn.move(tempDir, delta * speedFactor);
   }
-  unicorn.move(moveDir, delta);
   unicorn.update(delta, isMoving ? 'gallop' : 'idle');
   obj.position.set(unicorn.group.position.x, unicorn.group.position.y + (isVR ? 1.25 : 1.85), unicorn.group.position.z);
 }
 
 export function updateWalking(moveDir, obj, delta, isVR, timers) {
-  if (moveDir.lengthSq() > 0) {
-    moveDir.normalize();
-    obj.position.addScaledVector(moveDir, (isVR ? 7.5 : 8.5) * delta);
-    timers.foot += delta;
+  const lenSq = moveDir.lengthSq();
+  if (lenSq > 0.0001) {
+    const len = Math.sqrt(lenSq);
+    const speedFactor = Math.min(1, len);
+    tempDir.copy(moveDir).divideScalar(len);
+    obj.position.addScaledVector(tempDir, (isVR ? 7.5 : 8.5) * speedFactor * delta);
+    timers.foot += delta * speedFactor;
     if (timers.foot > 0.44) {
       timers.foot = 0;
       const isRock = isRockSurface(obj.position.x, obj.position.y, obj.position.z);

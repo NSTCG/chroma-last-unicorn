@@ -197,6 +197,7 @@ export function createShardsSystem(scene, onShardCollected, vrHud, pulseHaptics,
 
   return {
     shards,
+    getActiveTask: () => activeTask,
     getInteractiveMeshes: () => [
       ...shards.filter(s => !s.collected).map(s => s.unlocked ? s.core : s.shell),
       ...taskGroup.children

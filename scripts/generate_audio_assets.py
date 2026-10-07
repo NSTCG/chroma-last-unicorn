@@ -379,29 +379,145 @@ def make_violet_bgm():
     ]
     return create_chord_progression(chords, bpm=68, note_type='celesta', total_bars=4)
 
-# Finale: Awakened Rainbow Valley - Gentle Majestic C -> F -> G -> C
+def synth_orchestral_strings(freq, dur, gain=0.28):
+    """Rich bowed string section (violins/violas/cellos) with lush detune and vibrato"""
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    detunes = [0.996, 0.9985, 1.0, 1.0015, 1.004]
+    vib = 1.0 + (0.008 * np.minimum(1.0, t / 0.6)) * np.sin(2 * np.pi * 5.0 * t)
+    sig = np.zeros_like(t)
+    for d in detunes:
+        f = freq * d * vib
+        sig += np.sin(2 * np.pi * f * t) + 0.35 * np.sin(2 * np.pi * 2 * f * t) + 0.12 * np.sin(2 * np.pi * 3 * f * t)
+    env = (1.0 - np.exp(-t / 0.5)) * np.sin(np.pi * (t / dur)) ** 1.3
+    sos = signal.butter(2, 2200 / (SR / 2), btype='low', output='sos')
+    filtered = signal.sosfilt(sos, sig)
+    return filtered * env * gain
+
+def synth_french_horn(freq, dur, gain=0.24):
+    """Warm, noble orchestral French horn swell"""
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    sig = np.sin(2 * np.pi * freq * t) + 0.55 * np.sin(2 * np.pi * 2 * freq * t) + 0.22 * np.sin(2 * np.pi * 3 * freq * t) + 0.08 * np.sin(2 * np.pi * 4 * freq * t)
+    env = (1.0 - np.exp(-t / 0.7)) * np.sin(np.pi * (t / dur)) ** 1.5
+    sos = signal.butter(2, 1400 / (SR / 2), btype='low', output='sos')
+    return signal.sosfilt(sos, sig) * env * gain
+
+def synth_concert_flute(freq, dur, gain=0.22):
+    """Soaring, expressive orchestral flute with breath tone and delicate vibrato"""
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    vib = 1.0 + (0.012 * np.minimum(1.0, t / 0.4)) * np.sin(2 * np.pi * 5.4 * t)
+    f = freq * vib
+    breath = np.random.randn(len(t)) * 0.03
+    sig = np.sin(2 * np.pi * f * t) + 0.18 * np.sin(2 * np.pi * 2 * f * t) + breath
+    env = (1.0 - np.exp(-t / 0.25)) * np.exp(-t / (dur * 1.1)) * np.sin(np.pi * (t / dur)) ** 0.8
+    sos = signal.butter(2, 3200 / (SR / 2), btype='low', output='sos')
+    return signal.sosfilt(sos, sig) * env * gain
+
+def synth_orchestral_harp(freq, dur, gain=0.25):
+    """Crystalline concert harp pluck"""
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    sig = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.7)) + 0.28 * np.sin(2 * np.pi * 2.01 * freq * t) * np.exp(-t / (dur * 0.35)) + 0.1 * np.sin(2 * np.pi * 3.02 * freq * t) * np.exp(-t / (dur * 0.18))
+    return sig * gain
+
+# Finale: Awakened Rainbow Valley - Soothing Instrumental Orchestral Climax
 def make_finale_bgm():
+    """Lush, soothing instrumental orchestral climax ending music"""
+    bpm = 66
+    beat_dur = 60.0 / bpm
+    bar_dur = beat_dur * 4
+    total_bars = 8
+    total_dur = total_bars * bar_dur
+    total_samples = int(SR * total_dur)
+    mix = np.zeros(total_samples)
+
     chords = [
-        [130.8, 196.0, 261.6, 329.6],
-        [174.6, 220.0, 261.6],
-        [196.0, 246.9, 293.7],
-        [130.8, 261.6, 329.6]
+        [65.4, 130.8, 196.0, 246.9, 293.7, 329.6],     # Cmaj9
+        [61.7, 123.5, 196.0, 246.9, 293.7, 392.0],     # G/B
+        [55.0, 110.0, 164.8, 220.0, 261.6, 329.6],     # Am9
+        [49.0, 98.0, 164.8, 196.0, 246.9, 329.6],      # Em7/G
+        [43.7, 87.3, 174.6, 220.0, 261.6, 329.6],      # Fmaj9
+        [41.2, 82.4, 164.8, 196.0, 261.6, 329.6],      # C/E
+        [73.4, 146.8, 174.6, 220.0, 261.6, 392.0],     # Dm9 -> Gsus
+        [65.4, 130.8, 196.0, 246.9, 261.6, 329.6, 523.2] # Cmaj7 resolving
     ]
-    return create_chord_progression(chords, bpm=78, note_type='pad', total_bars=4)
+
+    # 1. Orchestral Strings Layer (full sustain across each bar)
+    for bar_idx, chord_notes in enumerate(chords):
+        start_time = bar_idx * bar_dur
+        start_idx = int(start_time * SR)
+        for f in chord_notes:
+            n = synth_orchestral_strings(f, bar_dur * 1.25, gain=0.18)
+            end_idx = min(start_idx + len(n), total_samples)
+            mix[start_idx:end_idx] += n[:end_idx - start_idx]
+
+    # 2. French Horn Choir (bars 4-8 giving majestic warmth)
+    horn_bars = [
+        (4, [174.6, 220.0, 261.6]),
+        (5, [164.8, 196.0, 261.6]),
+        (6, [146.8, 220.0, 293.7]),
+        (7, [130.8, 196.0, 261.6])
+    ]
+    for bar_idx, h_notes in horn_bars:
+        start_idx = int(bar_idx * bar_dur * SR)
+        for hf in h_notes:
+            n = synth_french_horn(hf, bar_dur * 1.15, gain=0.15)
+            end_idx = min(start_idx + len(n), total_samples)
+            mix[start_idx:end_idx] += n[:end_idx - start_idx]
+
+    # 3. Concert Harp Arpeggios (soothing cascading ripples)
+    for bar_idx, chord_notes in enumerate(chords):
+        arp_notes = chord_notes[1:]
+        for beat in range(4):
+            beat_time = bar_idx * bar_dur + beat * beat_dur
+            for sub in range(2):
+                t_sub = beat_time + sub * (beat_dur / 2.0)
+                note_f = arp_notes[(beat * 2 + sub) % len(arp_notes)]
+                n = synth_orchestral_harp(note_f * 2.0, beat_dur * 2.2, gain=0.12)
+                s_idx = int(t_sub * SR)
+                e_idx = min(s_idx + len(n), total_samples)
+                if s_idx < total_samples:
+                    mix[s_idx:e_idx] += n[:e_idx - s_idx]
+
+    # 4. Soaring Orchestral Flute Melody
+    melody = [
+        (0.0 * bar_dur, 659.3, 1.5 * beat_dur),
+        (0.4 * bar_dur, 784.0, 2.0 * beat_dur),
+        (1.0 * bar_dur, 880.0, 2.0 * beat_dur),
+        (1.5 * bar_dur, 987.8, 1.8 * beat_dur),
+        (2.0 * bar_dur, 1046.5, 3.2 * beat_dur),
+        (3.0 * bar_dur, 987.8, 1.8 * beat_dur),
+        (3.5 * bar_dur, 880.0, 1.8 * beat_dur),
+        (4.0 * bar_dur, 659.3, 2.5 * beat_dur),
+        (4.7 * bar_dur, 784.0, 1.8 * beat_dur),
+        (5.2 * bar_dur, 880.0, 2.5 * beat_dur),
+        (6.0 * bar_dur, 784.0, 1.8 * beat_dur),
+        (6.5 * bar_dur, 587.3, 1.8 * beat_dur),
+        (7.0 * bar_dur, 523.2, 3.8 * beat_dur)
+    ]
+    for m_time, m_freq, m_dur in melody:
+        n = synth_concert_flute(m_freq, m_dur, gain=0.18)
+        s_idx = int(m_time * SR)
+        e_idx = min(s_idx + len(n), total_samples)
+        if s_idx < total_samples:
+            mix[s_idx:e_idx] += n[:e_idx - s_idx]
+
+    stereo = apply_reverb(mix, decay=0.48, delay_ms=65)
+    stereo = warm_filter(stereo, cutoff=2800)
+
+    fade_len = int(SR * 1.8)
+    fade_in = np.linspace(0, 1, fade_len)[:, None]
+    fade_out = np.linspace(1, 0, fade_len)[:, None]
+    stereo[:fade_len] = stereo[:fade_len] * fade_in + stereo[-fade_len:] * fade_out
+    return normalize(stereo, 0.72)
 
 def main():
     print("Generating Soft & Gentle Mood Soundtracks...")
     music_items = {
-        'bgm_intro': make_intro_bgm,
-        'bgm_level0_red': make_red_bgm,
-        'bgm_level1_orange': make_orange_bgm,
-        'bgm_level2_yellow': make_yellow_bgm,
-        'bgm_level3_green': make_green_bgm,
-        'bgm_level4_blue': make_blue_bgm,
-        'bgm_level5_indigo': make_indigo_bgm,
-        'bgm_level6_violet': make_violet_bgm,
         'bgm_finale': make_finale_bgm
     }
+
+    import shutil
+    alt_music_dir = os.path.join(os.path.dirname(__file__), '..', 'audio', 'music')
+    os.makedirs(alt_music_dir, exist_ok=True)
 
     for name, func in music_items.items():
         audio = func()
@@ -409,7 +525,9 @@ def main():
         mp3_path = os.path.join(MUSIC_DIR, f"{name}.mp3")
         wavfile.write(wav_path, SR, (audio * 32767).astype(np.int16))
         to_mp3(wav_path, mp3_path, bitrate="128k")
-        print(f"  [BGM OK] {name}.mp3")
+        alt_mp3_path = os.path.join(alt_music_dir, f"{name}.mp3")
+        shutil.copyfile(mp3_path, alt_mp3_path)
+        print(f"  [BGM OK] {name}.mp3 (both dirs)")
 
 if __name__ == '__main__':
     main()
