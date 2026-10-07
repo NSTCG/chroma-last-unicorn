@@ -73,7 +73,6 @@ export function createNarrative(game) {
       const u = Math.max(0, 1 - slideProgress);
       moveCam(getSlidePoint(u), getSlidePoint(Math.max(0, u - 0.04)));
       game.setAwakened(Math.pow(u, 1.2));
-      if (Math.random() < 0.12) audio.tone('sine', 260 + u * 320, 0.4, 0.05);
 
       if (slideProgress >= 1) {
         isSliding = false;

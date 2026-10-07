@@ -235,16 +235,47 @@ def synth_note(freq, dur, type='rhodes', gain=0.5):
         env = (1 - np.exp(-t / 0.2)) * np.exp(-t / (dur * 0.95))
         sig = np.sin(2 * np.pi * freq * vib * t) + 0.4 * np.sin(2 * np.pi * freq * 2 * vib * t) + 0.2 * np.sin(2 * np.pi * freq * 3 * vib * t)
         return sig * env * gain
+def warm_filter(audio, cutoff=2200):
+    b, a = signal.butter(2, cutoff / (SR / 2), btype='low')
+    if audio.ndim == 2:
+        return np.column_stack([signal.lfilter(b, a, audio[:, 0]), signal.lfilter(b, a, audio[:, 1])])
+    return signal.lfilter(b, a, audio)
+
+def synth_note(freq, dur, type='rhodes', gain=0.35):
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    if type == 'rhodes':
+        base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.7))
+        tine1 = np.sin(2 * np.pi * freq * 2.01 * t) * 0.22 * np.exp(-t / (dur * 0.4))
+        trem = 1.0 + 0.08 * np.sin(2 * np.pi * 3.5 * t)
+        return (base + tine1) * trem * gain
+    elif type == 'acoustic':
+        base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.75))
+        overtone = np.sin(2 * np.pi * freq * 2.0 * t) * 0.25 * np.exp(-t / (dur * 0.4))
+        return (base + overtone) * gain * 0.8
+    elif type == 'kalimba':
+        base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.55))
+        overtone = np.sin(2 * np.pi * freq * 2.5 * t) * 0.25 * np.exp(-t / (dur * 0.2))
+        return (base + overtone) * gain * 0.75
+    elif type == 'pad':
+        detune = [0.996, 1.0, 1.004]
+        sig = np.zeros_like(t)
+        env = np.sin(np.pi * (t / dur)) ** 1.8
+        for d in detune:
+            sig += np.sin(2 * np.pi * freq * d * t)
+        return sig * env * gain * 0.65
+    elif type == 'cello':
+        vib = 1.0 + 0.008 * np.sin(2 * np.pi * 4.2 * t)
+        env = (1 - np.exp(-t / 0.4)) * np.exp(-t / (dur * 0.9))
+        sig = np.sin(2 * np.pi * freq * vib * t) + 0.22 * np.sin(2 * np.pi * freq * 2 * vib * t)
+        return sig * env * gain * 0.65
     elif type == 'celesta':
-        # Music box / chime bell
-        base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.6))
-        bell = np.sin(2 * np.pi * freq * 4.0 * t) * 0.5 * np.exp(-t / (dur * 0.25))
-        sparkle = np.sin(2 * np.pi * freq * 8.0 * t) * 0.2 * np.exp(-t / (dur * 0.1))
-        return (base + bell + sparkle) * gain
+        base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.8))
+        bell = np.sin(2 * np.pi * freq * 2.0 * t) * 0.2 * np.exp(-t / (dur * 0.35))
+        return (base + bell) * gain * 0.65
     return np.sin(2 * np.pi * freq * t) * gain
 
 def create_chord_progression(chords, bpm, note_type='pad', total_bars=4):
-    """Render chord progression loop with smooth crossfade"""
+    """Render chord progression loop with smooth crossfade and warm mellow tone"""
     beat_dur = 60.0 / bpm
     bar_dur = beat_dur * 4
     total_dur = total_bars * bar_dur
@@ -255,127 +286,111 @@ def create_chord_progression(chords, bpm, note_type='pad', total_bars=4):
         start_time = bar_idx * bar_dur
         start_idx = int(start_time * SR)
         for f in chord_notes:
-            n = synth_note(f, bar_dur * 1.15, type=note_type, gain=0.28)
+            n = synth_note(f, bar_dur * 1.15, type=note_type, gain=0.22)
             end_idx = min(start_idx + len(n), total_samples)
             mix[start_idx:end_idx] += n[:end_idx - start_idx]
             
-    # Apply reverb for lush spacious atmosphere
-    stereo = apply_reverb(mix, decay=0.45, delay_ms=50)
+    # Apply reverb and warm lowpass filter to remove harshness
+    stereo = apply_reverb(mix, decay=0.38, delay_ms=55)
+    stereo = warm_filter(stereo, cutoff=2200)
+    
     # Seamless loop crossfade
     fade_len = int(SR * 1.2)
     stereo[:fade_len] = stereo[:fade_len] * np.linspace(0, 1, fade_len)[:, None] + stereo[-fade_len:] * np.linspace(1, 0, fade_len)[:, None]
-    return normalize(stereo, 0.88)
+    return normalize(stereo, 0.65)
 
 # Mood 0: Intro (Terminal / Rain & Midnight) - Melancholic Dm9 -> G13 -> Cmaj7 -> Am7
 def make_intro_bgm():
     chords = [
-        [146.8, 220.0, 261.6, 329.6], # Dm9
-        [196.0, 246.9, 329.6, 392.0], # G13
-        [130.8, 196.0, 246.9, 329.6], # Cmaj7
-        [110.0, 164.8, 220.0, 261.6]  # Am7
+        [146.8, 220.0, 261.6, 329.6],
+        [196.0, 246.9, 329.6],
+        [130.8, 196.0, 246.9, 329.6],
+        [110.0, 164.8, 220.0]
     ]
-    return create_chord_progression(chords, bpm=68, note_type='rhodes', total_bars=4)
+    return create_chord_progression(chords, bpm=60, note_type='rhodes', total_bars=4)
 
 # Mood 1: Red Shard (The Thunderstorm & Candles) - Warm C -> G/B -> Am -> Fmaj7
 def make_red_bgm():
     chords = [
-        [130.8, 196.0, 261.6, 329.6], # C
-        [123.5, 196.0, 246.9, 293.7], # G/B
-        [110.0, 164.8, 220.0, 261.6], # Am
-        [174.6, 220.0, 261.6, 349.2]  # Fmaj7
+        [130.8, 196.0, 261.6],
+        [123.5, 196.0, 246.9],
+        [110.0, 164.8, 220.0],
+        [174.6, 220.0, 261.6]
     ]
-    return create_chord_progression(chords, bpm=74, note_type='acoustic', total_bars=4)
+    return create_chord_progression(chords, bpm=66, note_type='acoustic', total_bars=4)
 
 # Mood 2: Orange Shard (Firefly Meadow) - Sunlit Kalimba D -> G -> A -> Bm
 def make_orange_bgm():
     chords = [
-        [293.7, 369.9, 440.0, 587.3], # D
-        [196.0, 293.7, 392.0, 493.9], # G
-        [220.0, 277.2, 440.0, 554.4], # A
-        [246.9, 293.7, 369.9, 440.0]  # Bm
+        [293.7, 369.9, 440.0],
+        [196.0, 293.7, 392.0],
+        [220.0, 277.2, 440.0],
+        [246.9, 293.7, 369.9]
     ]
-    return create_chord_progression(chords, bpm=82, note_type='kalimba', total_bars=4)
+    return create_chord_progression(chords, bpm=72, note_type='kalimba', total_bars=4)
 
 # Mood 3: Yellow Shard (Voicemail Road Trip) - Bittersweet indie F -> C -> Dm -> Bb
 def make_yellow_bgm():
     chords = [
-        [174.6, 220.0, 261.6, 349.2], # F
-        [130.8, 196.0, 261.6, 329.6], # C
-        [146.8, 220.0, 261.6, 293.7], # Dm
-        [116.5, 174.6, 233.1, 293.7]  # Bb
+        [174.6, 220.0, 261.6],
+        [130.8, 196.0, 261.6],
+        [146.8, 220.0, 261.6],
+        [116.5, 174.6, 233.1]
     ]
-    return create_chord_progression(chords, bpm=78, note_type='acoustic', total_bars=4)
+    return create_chord_progression(chords, bpm=64, note_type='acoustic', total_bars=4)
 
 # Mood 4: Green Shard (Celestial Sky & Stargazing) - Cosmic Em7 -> Cmaj7 -> G -> D
 def make_green_bgm():
     chords = [
-        [164.8, 196.0, 246.9, 329.6, 493.9], # Em7
-        [130.8, 196.0, 246.9, 329.6, 523.3], # Cmaj7
-        [196.0, 246.9, 293.7, 392.0, 587.3], # G
-        [146.8, 220.0, 293.7, 369.9, 440.0]  # D
+        [164.8, 196.0, 246.9, 329.6],
+        [130.8, 196.0, 246.9, 329.6],
+        [196.0, 246.9, 293.7, 392.0],
+        [146.8, 220.0, 293.7]
     ]
-    return create_chord_progression(chords, bpm=62, note_type='pad', total_bars=4)
+    return create_chord_progression(chords, bpm=56, note_type='pad', total_bars=4)
 
 # Mood 5: Blue Shard (Breathe & Hospital Peace) - Deep meditative Ab -> Eb -> Fm -> Db
 def make_blue_bgm():
     chords = [
-        [103.8, 155.6, 207.7, 261.6], # Ab
-        [155.6, 233.1, 311.1, 392.0], # Eb
-        [87.3, 130.8, 174.6, 207.7],  # Fm
-        [138.6, 207.7, 277.2, 349.2]  # Db
+        [103.8, 155.6, 207.7],
+        [155.6, 233.1, 311.1],
+        [87.3, 130.8, 174.6],
+        [138.6, 207.7, 277.2]
     ]
-    return create_chord_progression(chords, bpm=56, note_type='pad', total_bars=4)
+    return create_chord_progression(chords, bpm=50, note_type='pad', total_bars=4)
 
-# Mood 6: Indigo Shard (The Cliff Road & Catharsis) - Emotional Cello Bm -> G -> D -> A
+# Mood 6: Indigo Shard (The Cliff Road & Catharsis) - Soft, Mellow Cello Bm -> G -> D -> A
 def make_indigo_bgm():
     chords = [
-        [123.5, 185.0, 220.0, 293.7], # Bm
-        [98.0, 146.8, 196.0, 246.9],  # G
-        [146.8, 220.0, 293.7, 369.9], # D
-        [110.0, 164.8, 220.0, 277.2]  # A
+        [123.5, 185.0, 220.0],
+        [98.0, 146.8, 196.0],
+        [146.8, 220.0, 293.7],
+        [110.0, 164.8, 220.0]
     ]
-    return create_chord_progression(chords, bpm=66, note_type='cello', total_bars=4)
+    return create_chord_progression(chords, bpm=58, note_type='cello', total_bars=4)
 
-# Mood 7: Violet Shard (3rd Date Carousel & Unicorn) - Magical Celesta Waltz Bb -> Eb -> F -> Gm
+# Mood 7: Violet Shard (3rd Date Carousel & Unicorn) - Gentle Warm Music Box Waltz
 def make_violet_bgm():
     chords = [
-        [233.1, 293.7, 349.2, 466.2], # Bb
-        [155.6, 233.1, 311.1, 392.0], # Eb
-        [174.6, 220.0, 261.6, 349.2], # F
-        [196.0, 233.1, 293.7, 392.0]  # Gm
+        [233.1, 293.7, 349.2],
+        [155.6, 233.1, 311.1],
+        [174.6, 220.0, 261.6],
+        [196.0, 233.1, 293.7]
     ]
-    return create_chord_progression(chords, bpm=88, note_type='celesta', total_bars=4)
+    return create_chord_progression(chords, bpm=68, note_type='celesta', total_bars=4)
 
-# Finale: Awakened Rainbow Valley - Majestic Triumphant C -> F -> G -> C
+# Finale: Awakened Rainbow Valley - Gentle Majestic C -> F -> G -> C
 def make_finale_bgm():
     chords = [
-        [130.8, 196.0, 261.6, 329.6, 523.3], # C
-        [174.6, 220.0, 261.6, 349.2, 523.3], # F
-        [196.0, 246.9, 293.7, 392.0, 587.3], # G
-        [130.8, 261.6, 329.6, 392.0, 523.3]  # C
+        [130.8, 196.0, 261.6, 329.6],
+        [174.6, 220.0, 261.6],
+        [196.0, 246.9, 293.7],
+        [130.8, 261.6, 329.6]
     ]
-    return create_chord_progression(chords, bpm=92, note_type='pad', total_bars=4)
+    return create_chord_progression(chords, bpm=78, note_type='pad', total_bars=4)
 
 def main():
-    print("Generating Realistic Audio Effects...")
-    sfx_items = {
-        'wind': generate_wind,
-        'grass_woosh': generate_grass_woosh,
-        'brush_grass': generate_brush_grass,
-        'footstep_grass': generate_footstep_grass,
-        'footstep_rock': generate_footstep_rock,
-        'unicorn_gallop': generate_unicorn_gallop
-    }
-    
-    for name, func in sfx_items.items():
-        audio = func()
-        wav_path = os.path.join(SFX_DIR, f"{name}.wav")
-        mp3_path = os.path.join(SFX_DIR, f"{name}.mp3")
-        wavfile.write(wav_path, SR, (audio * 32767).astype(np.int16))
-        to_mp3(wav_path, mp3_path, bitrate="96k")
-        print(f"  [SFX OK] {name}.mp3")
-
-    print("\nGenerating Unique Level Mood Soundtracks...")
+    print("Generating Soft & Gentle Mood Soundtracks...")
     music_items = {
         'bgm_intro': make_intro_bgm,
         'bgm_level0_red': make_red_bgm,

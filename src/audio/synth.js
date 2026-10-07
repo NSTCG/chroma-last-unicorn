@@ -17,7 +17,7 @@ const rustle = () => tone('triangle', 320 + Math.random() * 80, 0.04, 0.08);
 
 let currentVoice = null;
 let currentBGM = null;
-let targetBgmVol = 0.52;
+let targetBgmVol = 0.28;
 
 export const audio = {
   init() {
@@ -25,11 +25,11 @@ export const audio = {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     masterGain = ctx.createGain();
-    masterGain.gain.value = 0.36;
+    masterGain.gain.value = 0.30;
     masterGain.connect(ctx.destination);
 
     const osc = ctx.createOscillator(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
-    osc.frequency.value = 65.4; flt.frequency.value = 160; gn.gain.value = 0.12;
+    osc.frequency.value = 65.4; flt.frequency.value = 160; gn.gain.value = 0.10;
     osc.connect(flt); flt.connect(gn); gn.connect(masterGain);
     osc.start();
     droneFilter = flt;
@@ -42,7 +42,7 @@ export const audio = {
       nSrc.buffer = b; nSrc.loop = true;
       const wFlt = ctx.createBiquadFilter(), wGn = ctx.createGain();
       wFlt.type = 'bandpass'; wFlt.frequency.value = 320; wFlt.Q.value = 1.4;
-      wGn.gain.value = 0.08;
+      wGn.gain.value = 0.06;
       nSrc.connect(wFlt); wFlt.connect(wGn); wGn.connect(masterGain);
       nSrc.start();
       windFilter = wFlt;
@@ -74,7 +74,7 @@ export const audio = {
     if (currentBGM) {
       const oldBgm = currentBGM;
       const fadeOut = setInterval(() => {
-        if (oldBgm.volume > 0.05) oldBgm.volume -= 0.05;
+        if (oldBgm.volume > 0.03) oldBgm.volume -= 0.03;
         else {
           clearInterval(fadeOut);
           try { oldBgm.pause(); } catch (_) {}
@@ -87,7 +87,7 @@ export const audio = {
     const newBgm = new Audio(paths[0]);
     newBgm.dataset.track = filename;
     newBgm.loop = true;
-    newBgm.volume = 0.04;
+    newBgm.volume = 0.02;
     newBgm.addEventListener('error', () => {
       idx++;
       if (idx < paths.length) {
@@ -97,7 +97,7 @@ export const audio = {
     });
     newBgm.play().then(() => {
       const fadeIn = setInterval(() => {
-        if (newBgm.volume < targetBgmVol - 0.04) newBgm.volume += 0.04;
+        if (newBgm.volume < targetBgmVol - 0.02) newBgm.volume += 0.02;
         else {
           newBgm.volume = targetBgmVol;
           clearInterval(fadeIn);
