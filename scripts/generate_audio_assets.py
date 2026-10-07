@@ -26,25 +26,24 @@ def normalize(audio, peak=0.92):
         return (audio / m) * peak
     return audio
 
-def apply_reverb(audio, decay=0.45, delay_ms=45):
-    """Simple stereo feedback comb/allpass reverb for ambient depth"""
-    delay_samples = int(SR * (delay_ms / 1000.0))
-    out = np.zeros_like(audio)
+def apply_reverb(audio, decay=0.35, delay_ms=45):
+    """Smooth multi-tap room acoustic reflection without metallic comb feedback"""
     if audio.ndim == 1:
         audio = np.column_stack([audio, audio])
-        out = np.zeros_like(audio)
     
-    # Left and right slightly decorrelated delays
-    dl = delay_samples
-    dr = int(delay_samples * 1.33)
+    out = np.copy(audio)
+    # Natural prime non-harmonic delays to prevent comb resonances
+    taps_l = [(int(SR * 0.023), 0.22), (int(SR * 0.047), 0.15), (int(SR * 0.083), 0.09), (int(SR * 0.131), 0.05)]
+    taps_r = [(int(SR * 0.029), 0.22), (int(SR * 0.053), 0.15), (int(SR * 0.089), 0.09), (int(SR * 0.137), 0.05)]
     
-    # Simple comb filter
-    out[:, 0] = audio[:, 0]
-    out[:, 1] = audio[:, 1]
-    for i in range(dl, len(audio)):
-        out[i, 0] += out[i - dl, 0] * decay
-    for i in range(dr, len(audio)):
-        out[i, 1] += out[i - dr, 1] * (decay * 0.9)
+    for delay, gain in taps_l:
+        if delay < len(audio):
+            out[delay:, 0] += audio[:-delay, 0] * gain * decay
+            
+    for delay, gain in taps_r:
+        if delay < len(audio):
+            out[delay:, 1] += audio[:-delay, 1] * gain * decay
+            
     return normalize(out)
 
 # ─────────────────────────────────────────────────────────────
@@ -268,6 +267,13 @@ def synth_note(freq, dur, type='rhodes', gain=0.35):
         env = (1 - np.exp(-t / 0.4)) * np.exp(-t / (dur * 0.9))
         sig = np.sin(2 * np.pi * freq * vib * t) + 0.22 * np.sin(2 * np.pi * freq * 2 * vib * t)
         return sig * env * gain * 0.65
+    elif type == 'piano':
+        base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.75))
+        h2 = np.sin(2 * np.pi * freq * 2.0 * t) * 0.28 * np.exp(-t / (dur * 0.45))
+        h3 = np.sin(2 * np.pi * freq * 3.0 * t) * 0.1 * np.exp(-t / (dur * 0.25))
+        h4 = np.sin(2 * np.pi * freq * 4.0 * t) * 0.04 * np.exp(-t / (dur * 0.15))
+        hammer = np.random.randn(len(t)) * np.exp(-t / 0.005) * 0.05
+        return (base + h2 + h3 + h4 + hammer) * gain * 0.85
     elif type == 'celesta':
         base = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.8))
         bell = np.sin(2 * np.pi * freq * 2.0 * t) * 0.2 * np.exp(-t / (dur * 0.35))
@@ -359,15 +365,15 @@ def make_blue_bgm():
     ]
     return create_chord_progression(chords, bpm=50, note_type='pad', total_bars=4)
 
-# Mood 6: Indigo Shard (The Cliff Road & Catharsis) - Soft, Mellow Cello Bm -> G -> D -> A
+# Mood 6: Indigo Shard (The Cliff Road & Catharsis) - Warm, Emotional Acoustic Piano (Bm -> G -> D -> A)
 def make_indigo_bgm():
     chords = [
-        [123.5, 185.0, 220.0],
-        [98.0, 146.8, 196.0],
-        [146.8, 220.0, 293.7],
-        [110.0, 164.8, 220.0]
+        [123.5, 146.8, 185.0, 220.0],  # Bm7
+        [98.0, 146.8, 196.0, 246.9],   # Gmaj7
+        [146.8, 185.0, 220.0, 293.7],  # D
+        [110.0, 164.8, 220.0, 277.2]   # A
     ]
-    return create_chord_progression(chords, bpm=58, note_type='cello', total_bars=4)
+    return create_chord_progression(chords, bpm=60, note_type='piano', total_bars=4)
 
 # Mood 7: Violet Shard (3rd Date Carousel & Unicorn) - Gentle Warm Music Box Waltz
 def make_violet_bgm():
@@ -379,48 +385,8 @@ def make_violet_bgm():
     ]
     return create_chord_progression(chords, bpm=68, note_type='celesta', total_bars=4)
 
-def synth_orchestral_strings(freq, dur, gain=0.28):
-    """Rich bowed string section (violins/violas/cellos) with lush detune and vibrato"""
-    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
-    detunes = [0.996, 0.9985, 1.0, 1.0015, 1.004]
-    vib = 1.0 + (0.008 * np.minimum(1.0, t / 0.6)) * np.sin(2 * np.pi * 5.0 * t)
-    sig = np.zeros_like(t)
-    for d in detunes:
-        f = freq * d * vib
-        sig += np.sin(2 * np.pi * f * t) + 0.35 * np.sin(2 * np.pi * 2 * f * t) + 0.12 * np.sin(2 * np.pi * 3 * f * t)
-    env = (1.0 - np.exp(-t / 0.5)) * np.sin(np.pi * (t / dur)) ** 1.3
-    sos = signal.butter(2, 2200 / (SR / 2), btype='low', output='sos')
-    filtered = signal.sosfilt(sos, sig)
-    return filtered * env * gain
-
-def synth_french_horn(freq, dur, gain=0.24):
-    """Warm, noble orchestral French horn swell"""
-    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
-    sig = np.sin(2 * np.pi * freq * t) + 0.55 * np.sin(2 * np.pi * 2 * freq * t) + 0.22 * np.sin(2 * np.pi * 3 * freq * t) + 0.08 * np.sin(2 * np.pi * 4 * freq * t)
-    env = (1.0 - np.exp(-t / 0.7)) * np.sin(np.pi * (t / dur)) ** 1.5
-    sos = signal.butter(2, 1400 / (SR / 2), btype='low', output='sos')
-    return signal.sosfilt(sos, sig) * env * gain
-
-def synth_concert_flute(freq, dur, gain=0.22):
-    """Soaring, expressive orchestral flute with breath tone and delicate vibrato"""
-    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
-    vib = 1.0 + (0.012 * np.minimum(1.0, t / 0.4)) * np.sin(2 * np.pi * 5.4 * t)
-    f = freq * vib
-    breath = np.random.randn(len(t)) * 0.03
-    sig = np.sin(2 * np.pi * f * t) + 0.18 * np.sin(2 * np.pi * 2 * f * t) + breath
-    env = (1.0 - np.exp(-t / 0.25)) * np.exp(-t / (dur * 1.1)) * np.sin(np.pi * (t / dur)) ** 0.8
-    sos = signal.butter(2, 3200 / (SR / 2), btype='low', output='sos')
-    return signal.sosfilt(sos, sig) * env * gain
-
-def synth_orchestral_harp(freq, dur, gain=0.25):
-    """Crystalline concert harp pluck"""
-    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
-    sig = np.sin(2 * np.pi * freq * t) * np.exp(-t / (dur * 0.7)) + 0.28 * np.sin(2 * np.pi * 2.01 * freq * t) * np.exp(-t / (dur * 0.35)) + 0.1 * np.sin(2 * np.pi * 3.02 * freq * t) * np.exp(-t / (dur * 0.18))
-    return sig * gain
-
-# Finale: Awakened Rainbow Valley - Soothing Instrumental Orchestral Climax
+# Finale: Awakened Rainbow Valley - Soothing, Emotional Acoustic Grand Piano & Warm Pad
 def make_finale_bgm():
-    """Lush, soothing instrumental orchestral climax ending music"""
     bpm = 66
     beat_dur = 60.0 / bpm
     bar_dur = beat_dur * 4
@@ -430,88 +396,71 @@ def make_finale_bgm():
     mix = np.zeros(total_samples)
 
     chords = [
-        [65.4, 130.8, 196.0, 246.9, 293.7, 329.6],     # Cmaj9
-        [61.7, 123.5, 196.0, 246.9, 293.7, 392.0],     # G/B
-        [55.0, 110.0, 164.8, 220.0, 261.6, 329.6],     # Am9
-        [49.0, 98.0, 164.8, 196.0, 246.9, 329.6],      # Em7/G
-        [43.7, 87.3, 174.6, 220.0, 261.6, 329.6],      # Fmaj9
-        [41.2, 82.4, 164.8, 196.0, 261.6, 329.6],      # C/E
-        [73.4, 146.8, 174.6, 220.0, 261.6, 392.0],     # Dm9 -> Gsus
-        [65.4, 130.8, 196.0, 246.9, 261.6, 329.6, 523.2] # Cmaj7 resolving
+        [130.8, 196.0, 246.9, 261.6, 329.6],  # Cmaj7
+        [123.5, 196.0, 246.9, 293.7, 392.0],  # G/B
+        [110.0, 164.8, 220.0, 261.6, 329.6],  # Am7
+        [98.0, 164.8, 196.0, 246.9, 329.6],   # Em/G
+        [87.3, 174.6, 220.0, 261.6, 329.6],   # Fmaj7
+        [82.4, 164.8, 196.0, 261.6, 329.6],   # C/E
+        [146.8, 174.6, 220.0, 261.6, 349.2],  # Dm7 -> G
+        [130.8, 196.0, 246.9, 261.6, 523.2]   # Cmaj7
     ]
 
-    # 1. Orchestral Strings Layer (full sustain across each bar)
+    # 1. Warm Acoustic Piano Chords
     for bar_idx, chord_notes in enumerate(chords):
         start_time = bar_idx * bar_dur
         start_idx = int(start_time * SR)
         for f in chord_notes:
-            n = synth_orchestral_strings(f, bar_dur * 1.25, gain=0.18)
+            n = synth_note(f, bar_dur * 1.05, type='piano', gain=0.22)
             end_idx = min(start_idx + len(n), total_samples)
             mix[start_idx:end_idx] += n[:end_idx - start_idx]
 
-    # 2. French Horn Choir (bars 4-8 giving majestic warmth)
-    horn_bars = [
-        (4, [174.6, 220.0, 261.6]),
-        (5, [164.8, 196.0, 261.6]),
-        (6, [146.8, 220.0, 293.7]),
-        (7, [130.8, 196.0, 261.6])
-    ]
-    for bar_idx, h_notes in horn_bars:
-        start_idx = int(bar_idx * bar_dur * SR)
-        for hf in h_notes:
-            n = synth_french_horn(hf, bar_dur * 1.15, gain=0.15)
-            end_idx = min(start_idx + len(n), total_samples)
-            mix[start_idx:end_idx] += n[:end_idx - start_idx]
-
-    # 3. Concert Harp Arpeggios (soothing cascading ripples)
+    # 2. Warm Sustained Background Pad
     for bar_idx, chord_notes in enumerate(chords):
-        arp_notes = chord_notes[1:]
-        for beat in range(4):
-            beat_time = bar_idx * bar_dur + beat * beat_dur
-            for sub in range(2):
-                t_sub = beat_time + sub * (beat_dur / 2.0)
-                note_f = arp_notes[(beat * 2 + sub) % len(arp_notes)]
-                n = synth_orchestral_harp(note_f * 2.0, beat_dur * 2.2, gain=0.12)
-                s_idx = int(t_sub * SR)
-                e_idx = min(s_idx + len(n), total_samples)
-                if s_idx < total_samples:
-                    mix[s_idx:e_idx] += n[:e_idx - s_idx]
+        start_time = bar_idx * bar_dur
+        start_idx = int(start_time * SR)
+        for f in chord_notes[1:4]:
+            t_pad = np.linspace(0, bar_dur * 1.15, int(SR * bar_dur * 1.15), endpoint=False)
+            pad_sig = (np.sin(2 * np.pi * f * t_pad) + 0.2 * np.sin(2 * np.pi * 2 * f * t_pad)) * np.sin(np.pi * (t_pad / (bar_dur * 1.15))) * 0.08
+            end_idx = min(start_idx + len(pad_sig), total_samples)
+            mix[start_idx:end_idx] += pad_sig[:end_idx - start_idx]
 
-    # 4. Soaring Orchestral Flute Melody
+    # 3. Soothing, Emotional Piano Melody
     melody = [
-        (0.0 * bar_dur, 659.3, 1.5 * beat_dur),
-        (0.4 * bar_dur, 784.0, 2.0 * beat_dur),
-        (1.0 * bar_dur, 880.0, 2.0 * beat_dur),
-        (1.5 * bar_dur, 987.8, 1.8 * beat_dur),
-        (2.0 * bar_dur, 1046.5, 3.2 * beat_dur),
-        (3.0 * bar_dur, 987.8, 1.8 * beat_dur),
-        (3.5 * bar_dur, 880.0, 1.8 * beat_dur),
-        (4.0 * bar_dur, 659.3, 2.5 * beat_dur),
-        (4.7 * bar_dur, 784.0, 1.8 * beat_dur),
-        (5.2 * bar_dur, 880.0, 2.5 * beat_dur),
-        (6.0 * bar_dur, 784.0, 1.8 * beat_dur),
-        (6.5 * bar_dur, 587.3, 1.8 * beat_dur),
-        (7.0 * bar_dur, 523.2, 3.8 * beat_dur)
+        (0.0 * bar_dur, 659.3, 1.8 * beat_dur),  # E5
+        (0.5 * bar_dur, 784.0, 1.8 * beat_dur),  # G5
+        (1.0 * bar_dur, 880.0, 2.0 * beat_dur),  # A5
+        (1.5 * bar_dur, 987.8, 1.8 * beat_dur),  # B5
+        (2.0 * bar_dur, 1046.5, 3.0 * beat_dur), # C6
+        (3.0 * bar_dur, 987.8, 1.8 * beat_dur),  # B5
+        (3.5 * bar_dur, 784.0, 1.8 * beat_dur),  # G5
+        (4.0 * bar_dur, 659.3, 2.2 * beat_dur),  # E5
+        (4.5 * bar_dur, 784.0, 1.8 * beat_dur),  # G5
+        (5.0 * bar_dur, 880.0, 2.2 * beat_dur),  # A5
+        (6.0 * bar_dur, 784.0, 1.8 * beat_dur),  # G5
+        (6.5 * bar_dur, 587.3, 1.8 * beat_dur),  # D5
+        (7.0 * bar_dur, 523.2, 3.5 * beat_dur)   # C5
     ]
     for m_time, m_freq, m_dur in melody:
-        n = synth_concert_flute(m_freq, m_dur, gain=0.18)
+        n = synth_note(m_freq, m_dur, type='piano', gain=0.24)
         s_idx = int(m_time * SR)
         e_idx = min(s_idx + len(n), total_samples)
         if s_idx < total_samples:
             mix[s_idx:e_idx] += n[:e_idx - s_idx]
 
-    stereo = apply_reverb(mix, decay=0.48, delay_ms=65)
-    stereo = warm_filter(stereo, cutoff=2800)
+    stereo = apply_reverb(mix, decay=0.32, delay_ms=45)
+    stereo = warm_filter(stereo, cutoff=2600)
 
-    fade_len = int(SR * 1.8)
+    fade_len = int(SR * 1.5)
     fade_in = np.linspace(0, 1, fade_len)[:, None]
     fade_out = np.linspace(1, 0, fade_len)[:, None]
     stereo[:fade_len] = stereo[:fade_len] * fade_in + stereo[-fade_len:] * fade_out
-    return normalize(stereo, 0.72)
+    return normalize(stereo, 0.68)
 
 def main():
-    print("Generating Soft & Gentle Mood Soundtracks...")
+    print("Generating Normal & Soothing Mood Soundtracks...")
     music_items = {
+        'bgm_level5_indigo': make_indigo_bgm,
         'bgm_finale': make_finale_bgm
     }
 
